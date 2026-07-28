@@ -41,5 +41,4 @@ public enum TravelReason {
 
         return this.name().toLowerCase();
     }
-
 }

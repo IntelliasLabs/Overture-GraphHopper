@@ -22,7 +22,8 @@ public class GraphConstructionTest {
 
     private static final File correctLittleSegmentGeoJson = Paths.get(
                     "src/test/resources/",
-                    "com/graphhopper/reader/overture/parser/correctLittleSegment.geojson").toFile();
+                    "com/graphhopper/reader/overture/parser/correctLittleSegment.geojson")
+            .toFile();
 
     private static final String GH_LOCATION = "target/graphhopper-test-gh";
 
@@ -34,15 +35,16 @@ public class GraphConstructionTest {
         assertEquals(
                 5,
                 createGraphHopper(correctLittleSegmentGeoJson)
-                        .getBaseGraph().getAllEdges().length()
-        );
+                        .getBaseGraph()
+                        .getAllEdges()
+                        .length());
     }
 
     @Test
     @DisplayName("Test graph construction: correct node number")
     public void testGraphConstructionOnOvertureDataCorrectNodeNumber() {
-        assertEquals(6, createGraphHopper(correctLittleSegmentGeoJson)
-                .getBaseGraph().getNodes());
+        assertEquals(
+                6, createGraphHopper(correctLittleSegmentGeoJson).getBaseGraph().getNodes());
     }
 
     @Test
@@ -64,32 +66,47 @@ public class GraphConstructionTest {
                                         "src/test/resources/",
                                         "com/graphhopper/reader/overture/parser/correctGeoJson_CenterOfLviv.geojson")
                                 .toFile(),
-                        49.82915104534047, 24.010322973268586,
-                        49.83976312814286, 24.047616211550206,
-                        "car", 4.3),
+                        49.82915104534047,
+                        24.010322973268586,
+                        49.83976312814286,
+                        24.047616211550206,
+                        "car",
+                        4.3),
                 Arguments.of(
                         Paths.get(
                                         "src/test/resources/",
                                         "com/graphhopper/reader/overture/parser/correctGeoJson_CenterOfKyiv.geojson")
                                 .toFile(),
-                        50.5087781, 30.5898204,
-                        50.5281311, 30.5887254,
-                        "foot", 2.7),
+                        50.5087781,
+                        30.5898204,
+                        50.5281311,
+                        30.5887254,
+                        "foot",
+                        2.7),
                 Arguments.of(
                         Paths.get(
                                         "src/test/resources/",
                                         "com/graphhopper/reader/overture/parser/centerOfBerlin.geojson")
                                 .toFile(),
-                        52.524063, 13.3906422,
-                        52.5168102, 13.4178287,
-                        "bike", 2.8));
+                        52.524063,
+                        13.3906422,
+                        52.5168102,
+                        13.4178287,
+                        "bike",
+                        2.8));
     }
 
     @ParameterizedTest
     @MethodSource("testParametrization")
     @DisplayName("Test graph construction: graph connectivity")
-    public void testGraphConstructionOnOvertureDataConnectivity(File file,
-            double fLat, double fLon, double tLat, double tLon, String profile, double distExp) {
+    public void testGraphConstructionOnOvertureDataConnectivity(
+            File file,
+            double fLat,
+            double fLon,
+            double tLat,
+            double tLon,
+            String profile,
+            double distExp) {
         GraphHopper gh = createGraphHopper(file);
         GHRequest hRequest = new GHRequest(fLat, fLon, tLat, tLon).setProfile(profile);
 
@@ -108,14 +125,12 @@ public class GraphConstructionTest {
         hopper.setDataFile(file.getAbsolutePath());
         hopper.setGraphHopperLocation(GH_LOCATION);
 
-        hopper.setDataReaderInitializer((baseGraph, osmParsers, config) -> {
-            OvertureReader reader = new OvertureReader(baseGraph);
-            reader.setEncodedValueLookup(hopper.getEncodingManager());
-            return reader;
-        });
+        hopper.setDataReaderInitializer(context -> new OvertureReader(context.getBaseGraph())
+                .setEncodedValueLookup(context.getEncodingManager())
+                .setFile(context.getSourceFile()));
 
         hopper.setProfiles(
-                new Profile("car").setCustomModel(GHUtility.loadCustomModelFromJar("car_overture.json")),
+                new Profile("car").setCustomModel(GHUtility.loadCustomModelFromJar("car.json")),
                 new Profile("foot").setCustomModel(GHUtility.loadCustomModelFromJar("foot_overture.json")),
                 new Profile("bike").setCustomModel(GHUtility.loadCustomModelFromJar("bike_overture.json")));
 
@@ -126,5 +141,4 @@ public class GraphConstructionTest {
         hopper.importOrLoad();
         return hopper;
     }
-
 }

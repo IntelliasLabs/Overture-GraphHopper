@@ -1,9 +1,9 @@
 package com.graphhopper.reader.overture.road.segment.rule;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class OvertureWidthRuleTest {
     @Test

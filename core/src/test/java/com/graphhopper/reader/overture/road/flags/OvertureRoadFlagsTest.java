@@ -1,8 +1,9 @@
 package com.graphhopper.reader.overture.road.flags;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class OvertureRoadFlagsTest {
 
@@ -39,14 +40,16 @@ public class OvertureRoadFlagsTest {
 
     @Test
     public void testShouldSkipForAbandoned() {
-        OvertureRoadFlags abandoned = new OvertureRoadFlags(false, false, false, true, false, false, null);
+        OvertureRoadFlags abandoned =
+                new OvertureRoadFlags(false, false, false, true, false, false, null);
         assertTrue(abandoned.isAbandoned());
         assertTrue(abandoned.shouldSkip());
     }
 
     @Test
     public void testShouldSkipForUnderConstruction() {
-        OvertureRoadFlags construction = new OvertureRoadFlags(false, false, true, false, false, false, null);
+        OvertureRoadFlags construction =
+                new OvertureRoadFlags(false, false, true, false, false, false, null);
         assertTrue(construction.isUnderConstruction());
         assertTrue(construction.shouldSkip());
     }
@@ -54,9 +57,12 @@ public class OvertureRoadFlagsTest {
     @Test
     public void testEqualsAndHashCode() {
         LinearlyReferencedRange range = new LinearlyReferencedRange(0.1, 0.2);
-        OvertureRoadFlags flags1 = new OvertureRoadFlags(true, false, false, false, false, false, range);
-        OvertureRoadFlags flags2 = new OvertureRoadFlags(true, false, false, false, false, false, new LinearlyReferencedRange(0.1, 0.2));
-        OvertureRoadFlags flags3 = new OvertureRoadFlags(false, true, false, false, false, false, range);
+        OvertureRoadFlags flags1 =
+                new OvertureRoadFlags(true, false, false, false, false, false, range);
+        OvertureRoadFlags flags2 = new OvertureRoadFlags(
+                true, false, false, false, false, false, new LinearlyReferencedRange(0.1, 0.2));
+        OvertureRoadFlags flags3 =
+                new OvertureRoadFlags(false, true, false, false, false, false, range);
 
         assertEquals(flags1, flags2);
         assertEquals(flags1.hashCode(), flags2.hashCode());

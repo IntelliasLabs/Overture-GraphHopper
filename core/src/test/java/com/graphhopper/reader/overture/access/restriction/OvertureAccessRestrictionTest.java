@@ -1,10 +1,10 @@
 package com.graphhopper.reader.overture.access.restriction;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link OvertureAccessRestriction} focusing on constructor behavior, accessors,
@@ -20,11 +20,8 @@ class OvertureAccessRestrictionTest {
         LinearlyReferencedRange range = new LinearlyReferencedRange(0.1, 0.9);
         PropertyScopeContainer rules = new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD);
 
-        OvertureAccessRestriction restriction = new OvertureAccessRestriction(
-                AccessType.ALLOWED,
-                rules,
-                range
-        );
+        OvertureAccessRestriction restriction =
+                new OvertureAccessRestriction(AccessType.ALLOWED, rules, range);
 
         assertEquals(AccessType.ALLOWED, restriction.getAccessType());
         assertSame(rules, restriction.getWhen());
@@ -39,17 +36,12 @@ class OvertureAccessRestrictionTest {
         OvertureAccessRestriction withAll = new OvertureAccessRestriction(
                 AccessType.ALLOWED,
                 new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD),
-                new LinearlyReferencedRange(0.0, 1.0)
-        );
+                new LinearlyReferencedRange(0.0, 1.0));
         assertTrue(withAll.hasAccessType());
         assertTrue(withAll.hasWhen());
         assertTrue(withAll.hasBetween());
 
-        OvertureAccessRestriction withNone = new OvertureAccessRestriction(
-                null,
-                null,
-                null
-        );
+        OvertureAccessRestriction withNone = new OvertureAccessRestriction(null, null, null);
         assertFalse(withNone.hasAccessType());
         assertFalse(withNone.hasWhen());
         assertFalse(withNone.hasBetween());
@@ -62,10 +54,13 @@ class OvertureAccessRestrictionTest {
     @Test
     void equalsAndHashCodeUseAllFields() {
         LinearlyReferencedRange range1 = new LinearlyReferencedRange(0.0, 0.5);
-        PropertyScopeContainer rules1 = new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD);
+        PropertyScopeContainer rules1 =
+                new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD);
 
-        OvertureAccessRestriction r1 = new OvertureAccessRestriction(AccessType.ALLOWED, rules1, range1);
-        OvertureAccessRestriction r2 = new OvertureAccessRestriction(AccessType.ALLOWED, rules1, range1);
+        OvertureAccessRestriction r1 =
+                new OvertureAccessRestriction(AccessType.ALLOWED, rules1, range1);
+        OvertureAccessRestriction r2 =
+                new OvertureAccessRestriction(AccessType.ALLOWED, rules1, range1);
 
         assertEquals(r1, r2);
         assertEquals(r1.hashCode(), r2.hashCode());
@@ -82,7 +77,8 @@ class OvertureAccessRestrictionTest {
         LinearlyReferencedRange range = new LinearlyReferencedRange(0.0, 1.0);
         PropertyScopeContainer rules = new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD);
 
-        OvertureAccessRestriction restriction = new OvertureAccessRestriction(AccessType.ALLOWED, rules, range);
+        OvertureAccessRestriction restriction =
+                new OvertureAccessRestriction(AccessType.ALLOWED, rules, range);
         String s = restriction.toString();
         assertTrue(s.contains("accessType=allowed"));
         assertTrue(s.contains("accessCondition="));
@@ -95,8 +91,10 @@ class OvertureAccessRestrictionTest {
      */
     @Test
     void isAllowedForwardWhenHeadingIsForward() {
-        PropertyScopeContainer forwardRules = new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD);
-        OvertureAccessRestriction allowedForward = new OvertureAccessRestriction(AccessType.ALLOWED, forwardRules, null);
+        PropertyScopeContainer forwardRules =
+                new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD);
+        OvertureAccessRestriction allowedForward =
+                new OvertureAccessRestriction(AccessType.ALLOWED, forwardRules, null);
 
         assertTrue(allowedForward.isAllowedForward());
         assertFalse(allowedForward.isAllowedBackward());
@@ -108,8 +106,10 @@ class OvertureAccessRestrictionTest {
      */
     @Test
     void isAllowedBackwardWhenHeadingIsBackward() {
-        PropertyScopeContainer backwardRules = new PropertyScopeContainer("10:00-18:00", TravelHeading.BACKWARD);
-        OvertureAccessRestriction allowedBackward = new OvertureAccessRestriction(AccessType.ALLOWED, backwardRules, null);
+        PropertyScopeContainer backwardRules =
+                new PropertyScopeContainer("10:00-18:00", TravelHeading.BACKWARD);
+        OvertureAccessRestriction allowedBackward =
+                new OvertureAccessRestriction(AccessType.ALLOWED, backwardRules, null);
 
         assertFalse(allowedBackward.isAllowedForward());
         assertTrue(allowedBackward.isAllowedBackward());
@@ -122,7 +122,8 @@ class OvertureAccessRestrictionTest {
     @Test
     void isAllowedInBothDirectionsWhenHeadingIsNull() {
         PropertyScopeContainer noHeadingRules = new PropertyScopeContainer("10:00-18:00", null);
-        OvertureAccessRestriction allowedNoHeading = new OvertureAccessRestriction(AccessType.ALLOWED, noHeadingRules, null);
+        OvertureAccessRestriction allowedNoHeading =
+                new OvertureAccessRestriction(AccessType.ALLOWED, noHeadingRules, null);
 
         assertTrue(allowedNoHeading.isAllowedForward());
         assertTrue(allowedNoHeading.isAllowedBackward());
@@ -134,7 +135,8 @@ class OvertureAccessRestrictionTest {
      */
     @Test
     void ofAccessTypeCreatesRestrictionWithOnlyAccessTypeSet() {
-        OvertureAccessRestriction restriction = OvertureAccessRestriction.ofAccessType(AccessType.ALLOWED);
+        OvertureAccessRestriction restriction =
+                OvertureAccessRestriction.ofAccessType(AccessType.ALLOWED);
 
         assertEquals(AccessType.ALLOWED, restriction.getAccessType());
         assertNull(restriction.getWhen());

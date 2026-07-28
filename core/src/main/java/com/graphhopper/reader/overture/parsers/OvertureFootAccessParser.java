@@ -1,13 +1,11 @@
 package com.graphhopper.reader.overture.parsers;
 
-import com.graphhopper.reader.overture.access.restriction.OvertureAccessRestriction;
+import com.graphhopper.reader.overture.access.restriction.scope.OvertureScopes;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadClass;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
 import com.graphhopper.routing.ev.BooleanEncodedValue;
 import com.graphhopper.util.EdgeIteratorState;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Parses pedestrian/foot access restrictions from Overture road segment data and
@@ -21,7 +19,16 @@ import java.util.List;
  *       depending on {@link TravelHeading}. Restrictions without a heading apply to both directions.</li>
  * </ul>
  */
-public final class OvertureFootAccessParser {
+public final class OvertureFootAccessParser implements OvertureTagParser {
+
+    private final BooleanEncodedValue accessEnc;
+
+    /**
+     * @param accessEnc the encoded value representing foot access
+     */
+    public OvertureFootAccessParser(BooleanEncodedValue accessEnc) {
+        this.accessEnc = accessEnc;
+    }
 
     /**
      * Determines foot (pedestrian) access for the given road segment and applies it to the edge.
@@ -29,12 +36,13 @@ public final class OvertureFootAccessParser {
      * <p>This method only looks at Overture access restrictions (DENIED rules) and their optional
      * {@link TravelHeading}. For the actual mode check it uses {@code "foot"}.
      *
-     * @param edge      the graph edge to update
-     * @param segment   the Overture road segment
-     * @param accessEnc the encoded value representing foot access
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; access comes entirely from the segment's restrictions
      */
-    public static void parseAccess(
-            EdgeIteratorState edge, OvertureRoadSegment segment, BooleanEncodedValue accessEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         var properties = segment.getProperties();
 
         // Motorways are not walkable by default.
@@ -51,22 +59,10 @@ public final class OvertureFootAccessParser {
             return;
         }
 
-        List<OvertureAccessRestriction> fwdRules = new ArrayList<>();
-        List<OvertureAccessRestriction> bwdRules = new ArrayList<>();
+        var byHeading = OvertureScopes.byHeading(accessRestrictions, OvertureScopes::headingOf);
 
-        for (OvertureAccessRestriction r : accessRestrictions) {
-            if (!r.hasWhen() || r.getWhen().getHeading() == null) {
-                fwdRules.add(r);
-                bwdRules.add(r);
-            } else if (r.getWhen().getHeading() == TravelHeading.FORWARD) {
-                fwdRules.add(r);
-            } else if (r.getWhen().getHeading() == TravelHeading.BACKWARD) {
-                bwdRules.add(r);
-            }
-        }
-
-        boolean canFwd = OvertureAccessParser.isAccessAllowed(fwdRules, "foot");
-        boolean canBwd = OvertureAccessParser.isAccessAllowed(bwdRules, "foot");
+        boolean canFwd = OvertureAccessParser.isAccessAllowed(byHeading.forward(), "foot");
+        boolean canBwd = OvertureAccessParser.isAccessAllowed(byHeading.backward(), "foot");
 
         edge.set(accessEnc, canFwd, canBwd);
     }

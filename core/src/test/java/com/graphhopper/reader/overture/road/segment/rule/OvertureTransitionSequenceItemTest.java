@@ -1,7 +1,8 @@
 package com.graphhopper.reader.overture.road.segment.rule;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class OvertureTransitionSequenceItemTest {
 
@@ -10,7 +11,8 @@ class OvertureTransitionSequenceItemTest {
         String expectedConnectorId = "overture:connector:123";
         String expectedSegmentId = "overture:segment:456";
 
-        OvertureTransitionSequenceItem item = new OvertureTransitionSequenceItem(expectedConnectorId, expectedSegmentId);
+        OvertureTransitionSequenceItem item =
+                new OvertureTransitionSequenceItem(expectedConnectorId, expectedSegmentId);
 
         assertEquals(expectedConnectorId, item.getConnectorId());
         assertEquals(expectedSegmentId, item.getSegmentId());

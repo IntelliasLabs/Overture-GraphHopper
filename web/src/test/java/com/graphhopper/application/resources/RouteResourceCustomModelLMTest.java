@@ -25,7 +25,7 @@ import com.graphhopper.config.LMProfile;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import org.junit.jupiter.api.AfterAll;
@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class RouteResourceCustomModelLMTest {
     private static final String DIR = "./target/andorra-gh/";
-    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static final DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
     private static final DropwizardAppExtension<GraphHopperServerConfiguration> app = new DropwizardAppExtension<>(GraphHopperApplication.class, createConfig());
 
     private static GraphHopperServerConfiguration createConfig() {

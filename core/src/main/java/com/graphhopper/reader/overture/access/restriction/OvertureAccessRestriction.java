@@ -3,7 +3,6 @@ package com.graphhopper.reader.overture.access.restriction;
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
 import com.graphhopper.reader.overture.road.segment.HasBetweenProperty;
-
 import java.util.Objects;
 
 /**
@@ -16,10 +15,9 @@ import java.util.Objects;
  */
 public class OvertureAccessRestriction implements HasBetweenProperty {
 
-    //--------------------------------------------------------------
+    // --------------------------------------------------------------
     // Fields
-    //--------------------------------------------------------------
-
+    // --------------------------------------------------------------
 
     /**
      * The high-level access decision for this restriction as returned by Overture.
@@ -37,11 +35,9 @@ public class OvertureAccessRestriction implements HasBetweenProperty {
      */
     private final LinearlyReferencedRange between;
 
-
-    //--------------------------------------------------------------
+    // --------------------------------------------------------------
     // Getters
-    //--------------------------------------------------------------
-
+    // --------------------------------------------------------------
 
     /**
      * Returns the high-level access decision for this restriction.
@@ -73,10 +69,9 @@ public class OvertureAccessRestriction implements HasBetweenProperty {
         return between;
     }
 
-
-    //--------------------------------------------------------------
+    // --------------------------------------------------------------
     // Helper methods
-    //--------------------------------------------------------------
+    // --------------------------------------------------------------
 
     /**
      * Returns whether an access type has been specified.
@@ -162,10 +157,7 @@ public class OvertureAccessRestriction implements HasBetweenProperty {
 
     @Override
     public int hashCode() {
-        return Objects.hash(
-                accessType,
-                when,
-                between);
+        return Objects.hash(accessType, when, between);
     }
 
     /**
@@ -174,15 +166,14 @@ public class OvertureAccessRestriction implements HasBetweenProperty {
      */
     @Override
     public String toString() {
-        return "OvertureAccessRestriction{" +
-                "accessType=" + accessType +
-                ", accessCondition=" + when +
-                ", between=" + between +
-                '}';
+        return "OvertureAccessRestriction{" + "accessType="
+                + accessType + ", accessCondition="
+                + when + ", between="
+                + between + '}';
     }
-    //--------------------------------------------------------------
+    // --------------------------------------------------------------
     // Constructors
-    //--------------------------------------------------------------
+    // --------------------------------------------------------------
 
     /**
      * Creates a new access restriction instance.
@@ -201,9 +192,8 @@ public class OvertureAccessRestriction implements HasBetweenProperty {
      *                   restriction applies to, or {@code null} if the
      *                   restriction is not linearly referenced
      */
-    public OvertureAccessRestriction(AccessType accessType,
-                                     PropertyScopeContainer when,
-                                     LinearlyReferencedRange between) {
+    public OvertureAccessRestriction(
+            AccessType accessType, PropertyScopeContainer when, LinearlyReferencedRange between) {
         this.accessType = accessType;
         this.when = when;
         this.between = between;

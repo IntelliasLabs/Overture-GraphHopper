@@ -1,8 +1,8 @@
 package com.graphhopper.reader.overture.road.segment.spliter;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.stream.Collector;
 
 class ListIfNotEmptyOtherNull {
@@ -15,8 +15,6 @@ class ListIfNotEmptyOtherNull {
                     l.addAll(r);
                     return l;
                 },
-                l -> l.isEmpty() ? Collections.emptyList() : l
-        );
+                l -> l.isEmpty() ? Collections.emptyList() : l);
     }
-
 }

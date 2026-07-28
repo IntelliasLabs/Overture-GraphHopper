@@ -30,7 +30,7 @@ import java.util.Map;
  *
  * @see com.graphhopper.routing.util.parsers.BikeCommonAverageSpeedParser
  */
-public final class OvertureBikeAverageSpeedParser {
+public final class OvertureBikeAverageSpeedParser implements OvertureTagParser {
 
     /** Speed for pushing sections (dismount, bad surfaces, etc.) */
     private static final double PUSHING_SECTION_SPEED = 4.0;
@@ -92,7 +92,14 @@ public final class OvertureBikeAverageSpeedParser {
             Map.entry(Smoothness.HORRIBLE, 0.3) // DIRT
             );
 
-    private OvertureBikeAverageSpeedParser() {}
+    private final DecimalEncodedValue speedEnc;
+
+    /**
+     * @param speedEnc the encoded value for bike speed
+     */
+    public OvertureBikeAverageSpeedParser(DecimalEncodedValue speedEnc) {
+        this.speedEnc = speedEnc;
+    }
 
     /**
      * Holds bidirectional bike speed values.
@@ -106,16 +113,25 @@ public final class OvertureBikeAverageSpeedParser {
      * Calculates and sets the average bicycle speed for the edge.
      * Handles bidirectional speeds.
      *
-     * @param edge     the GraphHopper edge to update
-     * @param segment  the Overture road segment metadata
-     * @param speedEnc the encoded value for bike speed
+     * @param edge the GraphHopper edge to update
+     * @param segment the Overture road segment metadata
+     * @param context unused; bike speed is derived entirely from the segment
      */
-    public static void parseSpeed(
-            EdgeIteratorState edge, OvertureRoadSegment segment, DecimalEncodedValue speedEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         BikeSpeed speed = calculateBikeSpeed(segment);
 
-        // EncodedValue bike_average_speed supports only one direction
-        edge.set(speedEnc, speed.forward());
+        if (speedEnc.isStoreTwoDirections()) {
+            // The backward speed used to be computed and then thrown away, so a segment with a
+            // direction-specific limit was ridden at the forward speed both ways. The shipped config
+            // declares bike_average_speed|store_two_directions=true precisely so this is expressible.
+            edge.set(speedEnc, speed.forward(), speed.backward());
+        } else {
+            // A one-direction encoding cannot hold an asymmetric speed; take the lower so the stored
+            // value never overstates how fast the slower direction can be ridden.
+            edge.set(speedEnc, Math.min(speed.forward(), speed.backward()));
+        }
     }
 
     /**

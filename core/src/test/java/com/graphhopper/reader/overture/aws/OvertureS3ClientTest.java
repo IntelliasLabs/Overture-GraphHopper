@@ -1,13 +1,8 @@
 package com.graphhopper.reader.overture.aws;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
-import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.core.exception.SdkClientException;
-import software.amazon.awssdk.core.sync.ResponseTransformer;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,10 +12,14 @@ import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
 public class OvertureS3ClientTest {
 
@@ -63,7 +62,8 @@ public class OvertureS3ClientTest {
 
         File result = OvertureS3Client.downloadFile(mockClient, "test-bucket", "test-key", tempFile);
         assertNotNull(result);
-        verify(mockClient, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+        verify(mockClient, times(1))
+                .getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
     }
 
     @Test
@@ -72,19 +72,20 @@ public class OvertureS3ClientTest {
         File tempFile = Files.createTempFile("error-test", ".tmp").toFile();
         tempFile.deleteOnExit();
 
-        NoSuchKeyException noSuchKeyException = (NoSuchKeyException) NoSuchKeyException.builder()
-                .message("Key not found")
-                .build();
+        NoSuchKeyException noSuchKeyException = (NoSuchKeyException)
+                NoSuchKeyException.builder().message("Key not found").build();
 
         when(mockClient.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
                 .thenThrow(noSuchKeyException);
 
-        IOException exception = assertThrows(IOException.class, () ->
-                OvertureS3Client.downloadFile(mockClient, "bucket", "nonexistent-key", tempFile));
+        IOException exception = assertThrows(
+                IOException.class,
+                () -> OvertureS3Client.downloadFile(mockClient, "bucket", "nonexistent-key", tempFile));
 
         assertTrue(exception.getMessage().contains("File not found"));
         // Should not retry for NoSuchKeyException
-        verify(mockClient, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+        verify(mockClient, times(1))
+                .getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
     }
 
     @Test
@@ -93,19 +94,20 @@ public class OvertureS3ClientTest {
         File tempFile = Files.createTempFile("error-test", ".tmp").toFile();
         tempFile.deleteOnExit();
 
-        NoSuchBucketException noSuchBucketException = (NoSuchBucketException) NoSuchBucketException.builder()
-                .message("Bucket not found")
-                .build();
+        NoSuchBucketException noSuchBucketException = (NoSuchBucketException)
+                NoSuchBucketException.builder().message("Bucket not found").build();
 
         when(mockClient.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
                 .thenThrow(noSuchBucketException);
 
-        IOException exception = assertThrows(IOException.class, () ->
-                OvertureS3Client.downloadFile(mockClient, "nonexistent-bucket", "key", tempFile));
+        IOException exception = assertThrows(
+                IOException.class,
+                () -> OvertureS3Client.downloadFile(mockClient, "nonexistent-bucket", "key", tempFile));
 
         assertTrue(exception.getMessage().contains("Bucket not found"));
         // Should not retry for NoSuchBucketException
-        verify(mockClient, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+        verify(mockClient, times(1))
+                .getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
     }
 
     @Test
@@ -126,12 +128,14 @@ public class OvertureS3ClientTest {
         when(mockClient.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
                 .thenThrow(s3Exception);
 
-        IOException exception = assertThrows(IOException.class, () ->
-                OvertureS3Client.downloadFile(mockClient, "bucket", "key", tempFile));
+        IOException exception = assertThrows(
+                IOException.class,
+                () -> OvertureS3Client.downloadFile(mockClient, "bucket", "key", tempFile));
 
         assertTrue(exception.getMessage().contains("Access Denied"));
         // Should not retry for 403 (non-retryable)
-        verify(mockClient, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+        verify(mockClient, times(1))
+                .getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
     }
 
     @Test
@@ -140,10 +144,8 @@ public class OvertureS3ClientTest {
         File tempFile = Files.createTempFile("retry-test", ".tmp").toFile();
         tempFile.deleteOnExit();
 
-        S3Exception serverError = (S3Exception) S3Exception.builder()
-                .message("Internal Server Error")
-                .statusCode(500)
-                .build();
+        S3Exception serverError = (S3Exception)
+                S3Exception.builder().message("Internal Server Error").statusCode(500).build();
 
         // Fail twice, succeed on third attempt
         when(mockClient.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
@@ -155,7 +157,8 @@ public class OvertureS3ClientTest {
 
         assertNotNull(result);
         // Should have retried 3 times total
-        verify(mockClient, times(3)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+        verify(mockClient, times(3))
+                .getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
     }
 
     @Test
@@ -164,21 +167,21 @@ public class OvertureS3ClientTest {
         File tempFile = Files.createTempFile("retry-exhausted", ".tmp").toFile();
         tempFile.deleteOnExit();
 
-        S3Exception serverError = (S3Exception) S3Exception.builder()
-                .message("Service Unavailable")
-                .statusCode(503)
-                .build();
+        S3Exception serverError = (S3Exception)
+                S3Exception.builder().message("Service Unavailable").statusCode(503).build();
 
         // Always fail
         when(mockClient.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
                 .thenThrow(serverError);
 
-        IOException exception = assertThrows(IOException.class, () ->
-                OvertureS3Client.downloadFile(mockClient, "bucket", "key", tempFile));
+        IOException exception = assertThrows(
+                IOException.class,
+                () -> OvertureS3Client.downloadFile(mockClient, "bucket", "key", tempFile));
 
         assertTrue(exception.getMessage().contains("after 3 attempts"));
         // Should have tried 3 times
-        verify(mockClient, times(3)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+        verify(mockClient, times(3))
+                .getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
     }
 
     @Test
@@ -187,9 +190,8 @@ public class OvertureS3ClientTest {
         @SuppressWarnings("unchecked")
         ResponseInputStream<GetObjectResponse> mockStream = mock(ResponseInputStream.class);
 
-        SdkClientException networkError = SdkClientException.builder()
-                .message("Connection reset")
-                .build();
+        SdkClientException networkError =
+                SdkClientException.builder().message("Connection reset").build();
 
         // Fail once, succeed on second attempt
         when(mockClient.getObject(any(GetObjectRequest.class)))
@@ -207,15 +209,13 @@ public class OvertureS3ClientTest {
     void testStreamFile_AllRetriesExhausted_NetworkError() {
         S3Client mockClient = mock(S3Client.class);
 
-        SdkClientException networkError = SdkClientException.builder()
-                .message("Connection timeout")
-                .build();
+        SdkClientException networkError =
+                SdkClientException.builder().message("Connection timeout").build();
 
-        when(mockClient.getObject(any(GetObjectRequest.class)))
-                .thenThrow(networkError);
+        when(mockClient.getObject(any(GetObjectRequest.class))).thenThrow(networkError);
 
-        IOException exception = assertThrows(IOException.class, () ->
-                OvertureS3Client.streamFile(mockClient, "bucket", "key"));
+        IOException exception = assertThrows(
+                IOException.class, () -> OvertureS3Client.streamFile(mockClient, "bucket", "key"));
 
         assertTrue(exception.getMessage().contains("after 3 attempts"));
         verify(mockClient, times(3)).getObject(any(GetObjectRequest.class));
@@ -228,9 +228,8 @@ public class OvertureS3ClientTest {
         S3Object obj1 = S3Object.builder().key("dir/file1.parquet").build();
         S3Object obj2 = S3Object.builder().key("dir/file2.parquet").build();
 
-        ListObjectsV2Response mockResponse = ListObjectsV2Response.builder()
-                .contents(Arrays.asList(obj1, obj2))
-                .build();
+        ListObjectsV2Response mockResponse =
+                ListObjectsV2Response.builder().contents(Arrays.asList(obj1, obj2)).build();
 
         when(mockClient.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(mockResponse);
 
@@ -246,10 +245,8 @@ public class OvertureS3ClientTest {
     void testListFiles_RetryOnThrottling() throws IOException {
         S3Client mockClient = mock(S3Client.class);
 
-        S3Exception throttlingError = (S3Exception) S3Exception.builder()
-                .message("Rate exceeded")
-                .statusCode(429)
-                .build();
+        S3Exception throttlingError = (S3Exception)
+                S3Exception.builder().message("Rate exceeded").statusCode(429).build();
 
         ListObjectsV2Response mockResponse = ListObjectsV2Response.builder()
                 .contents(Arrays.asList(S3Object.builder().key("file.txt").build()))
@@ -270,9 +267,8 @@ public class OvertureS3ClientTest {
         S3Client mockClient = mock(S3Client.class);
         long expectedSize = 987654321L;
 
-        HeadObjectResponse mockResponse = HeadObjectResponse.builder()
-                .contentLength(expectedSize)
-                .build();
+        HeadObjectResponse mockResponse =
+                HeadObjectResponse.builder().contentLength(expectedSize).build();
 
         when(mockClient.headObject(any(HeadObjectRequest.class))).thenReturn(mockResponse);
 
@@ -286,14 +282,11 @@ public class OvertureS3ClientTest {
     void testGetObjectSize_RetryOnServerError() throws IOException {
         S3Client mockClient = mock(S3Client.class);
 
-        S3Exception serverError = (S3Exception) S3Exception.builder()
-                .message("Internal Error")
-                .statusCode(500)
-                .build();
+        S3Exception serverError = (S3Exception)
+                S3Exception.builder().message("Internal Error").statusCode(500).build();
 
-        HeadObjectResponse mockResponse = HeadObjectResponse.builder()
-                .contentLength(100L)
-                .build();
+        HeadObjectResponse mockResponse =
+                HeadObjectResponse.builder().contentLength(100L).build();
 
         when(mockClient.headObject(any(HeadObjectRequest.class)))
                 .thenThrow(serverError)
@@ -324,14 +317,14 @@ public class OvertureS3ClientTest {
     void testOpenRangeStream_NoSuchKey() {
         S3Client mockClient = mock(S3Client.class);
 
-        NoSuchKeyException noSuchKey = (NoSuchKeyException) NoSuchKeyException.builder()
-                .message("Key not found")
-                .build();
+        NoSuchKeyException noSuchKey = (NoSuchKeyException)
+                NoSuchKeyException.builder().message("Key not found").build();
 
         when(mockClient.getObject(any(GetObjectRequest.class))).thenThrow(noSuchKey);
 
-        IOException exception = assertThrows(IOException.class, () ->
-                OvertureS3Client.openRangeStream(mockClient, "bucket", "missing-key", 0, 100));
+        IOException exception = assertThrows(
+                IOException.class,
+                () -> OvertureS3Client.openRangeStream(mockClient, "bucket", "missing-key", 0, 100));
 
         assertTrue(exception.getMessage().contains("File not found"));
         verify(mockClient, times(1)).getObject(any(GetObjectRequest.class));

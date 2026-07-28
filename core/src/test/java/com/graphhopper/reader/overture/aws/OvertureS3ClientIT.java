@@ -1,5 +1,11 @@
 package com.graphhopper.reader.overture.aws;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -12,13 +18,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 /**
  * Integration tests for {@link OvertureS3Client}.
  * <p>
@@ -26,7 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * to verify that the client can correctly stream files from an S3 bucket.
  * <p>
  */
-@Testcontainers
+// disabledWithoutDocker: this class needs a MinIO container, and without it the whole build
+// failed rather than skipping - it cannot pass on a machine with no Docker daemon.
+@Testcontainers(disabledWithoutDocker = true)
 public class OvertureS3ClientIT {
 
     // Define credentials as constants to ensure consistency between Server (MinIO) and Client (Java)
@@ -49,7 +50,7 @@ public class OvertureS3ClientIT {
         return S3Client.builder()
                 .endpointOverride(URI.create(minio.getS3URL()))
                 .region(Region.US_EAST_1) // MinIO ignores region, but SDK requires it
-                .forcePathStyle(true)     // REQUIRED for MinIO/Testcontainers to avoid 400 Bad Request
+                .forcePathStyle(true) // REQUIRED for MinIO/Testcontainers to avoid 400 Bad Request
                 .credentialsProvider(StaticCredentialsProvider.create(
                         // Use the explicit constants to avoid "Access Key Id does not exist" errors
                         AwsBasicCredentials.create(ACCESS_KEY, SECRET_KEY)))
@@ -88,8 +89,7 @@ public class OvertureS3ClientIT {
         testClient.createBucket(CreateBucketRequest.builder().bucket(bucket).build());
         testClient.putObject(
                 PutObjectRequest.builder().bucket(bucket).key(key).build(),
-                RequestBody.fromBytes(fakeParquetContent)
-        );
+                RequestBody.fromBytes(fakeParquetContent));
 
         // 3. Act: Test the streamFile method
         // We pass our manually configured testClient to the method
@@ -121,8 +121,7 @@ public class OvertureS3ClientIT {
             testClient.createBucket(CreateBucketRequest.builder().bucket(bucket).build());
             testClient.putObject(
                     PutObjectRequest.builder().bucket(bucket).key(key).build(),
-                    RequestBody.fromBytes(content)
-            );
+                    RequestBody.fromBytes(content));
 
             long size = OvertureS3Client.getObjectSize(testClient, bucket, key);
             assertEquals(10L, size, "Content length should be 10 bytes");
@@ -139,13 +138,13 @@ public class OvertureS3ClientIT {
             testClient.createBucket(CreateBucketRequest.builder().bucket(bucket).build());
             testClient.putObject(
                     PutObjectRequest.builder().bucket(bucket).key(key).build(),
-                    RequestBody.fromBytes(content)
-            );
+                    RequestBody.fromBytes(content));
 
             long start = 2;
             long end = 5;
 
-            try (InputStream stream = OvertureS3Client.openRangeStream(testClient, bucket, key, start, end)) {
+            try (InputStream stream =
+                    OvertureS3Client.openRangeStream(testClient, bucket, key, start, end)) {
                 byte[] resultBuffer = stream.readAllBytes();
                 String resultString = new String(resultBuffer, StandardCharsets.UTF_8);
 

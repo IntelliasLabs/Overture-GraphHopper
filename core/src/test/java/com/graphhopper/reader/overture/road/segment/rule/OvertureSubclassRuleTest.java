@@ -1,10 +1,10 @@
 package com.graphhopper.reader.overture.road.segment.rule;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSubclass;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class OvertureSubclassRuleTest {
 
@@ -22,7 +22,8 @@ class OvertureSubclassRuleTest {
         LinearlyReferencedRange range = new LinearlyReferencedRange(0.1, 0.9);
 
         OvertureSubclassRule rule1 = new OvertureSubclassRule(OvertureRoadSubclass.SIDEWALK, range);
-        OvertureSubclassRule rule2 = new OvertureSubclassRule(OvertureRoadSubclass.PARKING_AISLE, range);
+        OvertureSubclassRule rule2 =
+                new OvertureSubclassRule(OvertureRoadSubclass.PARKING_AISLE, range);
 
         assertEquals(OvertureRoadSubclass.SIDEWALK, rule1.getValue());
         assertEquals(OvertureRoadSubclass.PARKING_AISLE, rule2.getValue());

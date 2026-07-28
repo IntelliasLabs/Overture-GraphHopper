@@ -77,7 +77,7 @@ public class OSMReaderTest {
     private EdgeExplorer carOutExplorer;
     private EdgeExplorer carAllExplorer;
 
-    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     @BeforeEach
     public void setUp() {

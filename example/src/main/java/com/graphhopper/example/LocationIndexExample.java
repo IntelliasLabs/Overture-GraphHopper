@@ -10,7 +10,7 @@ import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.Snap;
 import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.GHUtility;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 
 import java.util.Map;
 
@@ -23,7 +23,7 @@ public class LocationIndexExample {
 
     public static void graphhopperLocationIndex(String relDir) {
         GraphHopper hopper = new GraphHopper();
-        hopper.setDataReaderInitializer(OSMReader::new);
+        hopper.setDataReaderInitializer(OsmSupport::create);
         hopper.setEncodedValuesString("car_access, car_average_speed, road_access, max_speed, road_environment, ferry_speed");
         hopper.setProfiles(new Profile("car").setCustomModel(GHUtility.loadCustomModelFromJar("car.json")));
         hopper.setDataFile(relDir + "core/files/andorra.osm.pbf");

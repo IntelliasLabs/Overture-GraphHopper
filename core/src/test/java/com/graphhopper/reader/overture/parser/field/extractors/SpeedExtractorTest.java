@@ -1,5 +1,9 @@
 package com.graphhopper.reader.overture.parser.field.extractors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graphhopper.reader.overture.common.speed.OvertureSpeed;
@@ -7,12 +11,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-
 
 public class SpeedExtractorTest {
 
@@ -68,7 +66,9 @@ public class SpeedExtractorTest {
     @Test
     @DisplayName("Should handle non-numeric speed values")
     void parseSpeed_InvalidType() throws Exception {
-        assertNull(SpeedExtractor.extractSpeed(mapper.readTree("{\"value\": \"fast\", \"unit\": \"km/h\"}"), "UNKNOWN"));
-        assertNull(SpeedExtractor.extractSpeed(mapper.readTree("{\"value\": [50], \"unit\": \"km/h\"}"), "UNKNOWN"));
+        assertNull(SpeedExtractor.extractSpeed(
+                mapper.readTree("{\"value\": \"fast\", \"unit\": \"km/h\"}"), "UNKNOWN"));
+        assertNull(SpeedExtractor.extractSpeed(
+                mapper.readTree("{\"value\": [50], \"unit\": \"km/h\"}"), "UNKNOWN"));
     }
 }

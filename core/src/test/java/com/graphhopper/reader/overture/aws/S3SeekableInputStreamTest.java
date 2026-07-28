@@ -1,5 +1,13 @@
 package com.graphhopper.reader.overture.aws;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -7,15 +15,6 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @DisplayName("S3SeekableInputStream Unit Tests")
 class S3SeekableInputStreamTest {
@@ -28,7 +27,8 @@ class S3SeekableInputStreamTest {
     @DisplayName("Seek() updates internal position correctly")
     void testSeekAndGetPos() {
         S3Client mockClient = mock(S3Client.class);
-        S3SeekableInputStream stream = new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
+        S3SeekableInputStream stream =
+                new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
 
         assertEquals(0, stream.getPos());
 
@@ -49,13 +49,14 @@ class S3SeekableInputStreamTest {
 
         when(mockS3Stream.read(any(byte[].class), anyInt(), anyInt())).thenAnswer(invocation -> {
             byte[] buffer = invocation.getArgument(0);
-            buffer[0] = 65; /// 'A'
+            buffer[0] = 65; // / 'A'
             return 1; /// 1 byte read
         });
 
         when(mockClient.getObject(any(GetObjectRequest.class))).thenReturn(mockS3Stream);
 
-        S3SeekableInputStream stream = new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
+        S3SeekableInputStream stream =
+                new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
 
         int byteRead = stream.read();
 
@@ -71,17 +72,20 @@ class S3SeekableInputStreamTest {
         @SuppressWarnings("unchecked")
         ResponseInputStream<GetObjectResponse> mockS3Stream = mock(ResponseInputStream.class);
 
-        when(mockS3Stream.read(any(byte[].class), anyInt(), anyInt())).thenReturn(10).thenReturn(-1);
+        when(mockS3Stream.read(any(byte[].class), anyInt(), anyInt()))
+                .thenReturn(10)
+                .thenReturn(-1);
         when(mockClient.getObject(any(GetObjectRequest.class))).thenReturn(mockS3Stream);
 
-        S3SeekableInputStream stream = new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
+        S3SeekableInputStream stream =
+                new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
 
         stream.seek(10);
         byte[] buffer = new byte[10];
         int readCount = stream.read(buffer, 0, 10);
 
         assertEquals(10, readCount);
-        assertEquals(20, stream.getPos()); /// 10 (start) + 10 (read)
+        assertEquals(20, stream.getPos()); // / 10 (start) + 10 (read)
 
         ArgumentCaptor<GetObjectRequest> captor = ArgumentCaptor.forClass(GetObjectRequest.class);
         verify(mockClient).getObject(captor.capture());
@@ -105,7 +109,8 @@ class S3SeekableInputStreamTest {
         });
         when(mockClient.getObject(any(GetObjectRequest.class))).thenReturn(mockS3Stream);
 
-        S3SeekableInputStream stream = new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
+        S3SeekableInputStream stream =
+                new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
 
         byte[] buffer = new byte[5];
         stream.readFully(buffer);
@@ -122,13 +127,12 @@ class S3SeekableInputStreamTest {
         @SuppressWarnings("unchecked")
         ResponseInputStream<GetObjectResponse> mockS3Stream = mock(ResponseInputStream.class);
 
-        when(mockS3Stream.read(any(byte[].class), anyInt(), anyInt()))
-                .thenReturn(5)
-                .thenReturn(-1);
+        when(mockS3Stream.read(any(byte[].class), anyInt(), anyInt())).thenReturn(5).thenReturn(-1);
 
         when(mockClient.getObject(any(GetObjectRequest.class))).thenReturn(mockS3Stream);
 
-        S3SeekableInputStream stream = new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
+        S3SeekableInputStream stream =
+                new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
         byte[] buffer = new byte[10];
 
         assertThrows(EOFException.class, () -> stream.readFully(buffer));
@@ -142,12 +146,11 @@ class S3SeekableInputStreamTest {
         @SuppressWarnings("unchecked")
         ResponseInputStream<GetObjectResponse> mockS3Stream = mock(ResponseInputStream.class);
 
-        when(mockS3Stream.read(any(byte[].class), anyInt(), anyInt()))
-                .thenReturn(5)
-                .thenReturn(-1);
+        when(mockS3Stream.read(any(byte[].class), anyInt(), anyInt())).thenReturn(5).thenReturn(-1);
         when(mockClient.getObject(any(GetObjectRequest.class))).thenReturn(mockS3Stream);
 
-        S3SeekableInputStream stream = new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
+        S3SeekableInputStream stream =
+                new S3SeekableInputStream(mockClient, BUCKET, KEY, CONTENT_LENGTH);
 
         ByteBuffer buffer = ByteBuffer.allocateDirect(10);
         int read = stream.read(buffer);

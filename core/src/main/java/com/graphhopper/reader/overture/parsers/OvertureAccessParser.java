@@ -2,6 +2,8 @@ package com.graphhopper.reader.overture.parsers;
 
 import com.graphhopper.reader.overture.access.restriction.AccessType;
 import com.graphhopper.reader.overture.access.restriction.OvertureAccessRestriction;
+import com.graphhopper.reader.overture.access.restriction.PropertyScopeContainer;
+import com.graphhopper.reader.overture.access.restriction.scope.OvertureScopes;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelMode;
 import java.util.List;
 import java.util.Set;
@@ -46,41 +48,91 @@ public final class OvertureAccessParser {
      */
     public static boolean isAccessAllowed(List<OvertureAccessRestriction> restrictions, String mode) {
         // Default: accessible if no restrictions
-        if (restrictions.isEmpty()) {
+        if (restrictions == null || restrictions.isEmpty()) {
             return true;
         }
 
         // Get all modes to check (mode + parent modes)
         Set<String> modesToCheck = getModesWithParents(mode);
 
-        boolean generalAccessDenied = false;
+        boolean denied = false;
+        boolean allowedForThisMode = false;
 
-        // Check if any restriction denies access for the mode or its parents
         for (OvertureAccessRestriction restriction : restrictions) {
-            if (!restriction.hasAccessType() || !restriction.hasWhen()) {
+            if (restriction == null || !restriction.hasAccessType()) {
                 continue;
             }
+            PropertyScopeContainer when = restriction.getWhen();
 
-            if (restriction.getAccessType() == AccessType.DENIED) {
-                List<TravelMode> restrictedModes = restriction.getWhen().getMode();
-                if (!restrictedModes.isEmpty()) {
-                    for (TravelMode travelMode : restrictedModes) {
-                        String restrictedMode = travelMode.toString();
-                        if (modesToCheck.contains(restrictedMode)) {
-                            return false;
-                        }
-                    }
-                } else {
-
-                    // If no specific modes are listed, this is a general access restriction
-                    boolean hasSpecificConditions =
-                            restriction.getWhen().hasVehicle() || restriction.getWhen().hasRecognized();
-                    if (!hasSpecificConditions) generalAccessDenied = true;
+            switch (restriction.getAccessType()) {
+                case DENIED -> {
+                    if (appliesToMode(when, modesToCheck) || isGeneralClosure(when)) denied = true;
+                }
+                    // An allow naming this mode lifts a broader denial, so "denied for vehicles but
+                    // allowed for bicycles" leaves bicycles routable. Evaluated independently of list
+                    // order, because Overture does not define an ordering over restrictions.
+                case ALLOWED, DESIGNATED -> {
+                    if (appliesToMode(when, modesToCheck)) allowedForThisMode = true;
                 }
             }
         }
 
-        return !generalAccessDenied;
+        return !denied || allowedForThisMode;
+    }
+
+    /**
+     * Checks whether the mode may traverse the segment in at least one direction.
+     *
+     * <p>{@link #isAccessAllowed} evaluates a list that has already been narrowed to one direction.
+     * Callers holding the unsplit list must use this method instead: a denial scoped to a single
+     * heading — the ordinary way Overture encodes a oneway street — would otherwise look like a
+     * closure of the whole segment.
+     *
+     * @param restrictions the unsplit list of access restrictions, may be {@code null} or empty
+     * @param mode the travel mode to check
+     * @return {@code true} if the mode is allowed in either direction
+     */
+    public static boolean isAccessAllowedEitherDirection(
+            List<OvertureAccessRestriction> restrictions, String mode) {
+        if (restrictions == null || restrictions.isEmpty()) return true;
+
+        OvertureScopes.Directed<OvertureAccessRestriction> byHeading =
+                OvertureScopes.byHeading(restrictions, OvertureScopes::headingOf);
+        return isAccessAllowed(byHeading.forward(), mode)
+                || isAccessAllowed(byHeading.backward(), mode);
+    }
+
+    /**
+     * @param when the restriction's scope, possibly {@code null}
+     * @param modesToCheck the queried mode together with its parent modes
+     * @return whether the restriction names the queried mode or one of its parents
+     */
+    private static boolean appliesToMode(PropertyScopeContainer when, Set<String> modesToCheck) {
+        if (when == null || !when.hasMode()) return false;
+        for (TravelMode travelMode : when.getMode()) {
+            if (modesToCheck.contains(travelMode.toString())) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reports whether a denial closes the road for everyone rather than for a particular mode.
+     *
+     * <p>A restriction with no {@code when} clause at all is the plain "no access" case — a gated
+     * service road or private drive. It used to be skipped entirely, which left such roads open to
+     * bicycles and pedestrians; car traffic escaped the bug only because {@code
+     * OvertureRoadSegment.isAccessible} implemented the same rule separately and got it right.
+     *
+     * <p>A denial qualified by {@code vehicle} (a dimensional limit such as height) or {@code
+     * recognized} (permit holders) is not a general closure: it bars particular vehicles, not all
+     * traffic.
+     *
+     * @param when the restriction's scope, possibly {@code null}
+     * @return whether the denial applies to all traffic
+     */
+    private static boolean isGeneralClosure(PropertyScopeContainer when) {
+        if (when == null) return true;
+        return !when.hasMode() && !when.hasVehicle() && !when.hasRecognized();
     }
 
     /**

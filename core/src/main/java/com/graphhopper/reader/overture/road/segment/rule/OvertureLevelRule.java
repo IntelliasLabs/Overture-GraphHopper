@@ -2,7 +2,6 @@ package com.graphhopper.reader.overture.road.segment.rule;
 
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import com.graphhopper.reader.overture.road.segment.HasBetweenProperty;
-
 import java.util.Objects;
 
 /**

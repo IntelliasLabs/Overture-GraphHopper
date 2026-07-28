@@ -1,8 +1,8 @@
 package com.graphhopper.reader.overture.access.restriction.scope.containers;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link ComparisonOperator} conversion helpers.
@@ -16,7 +16,8 @@ class ComparisonOperatorTest {
     @Test
     void fromStringParsesValidValuesCaseInsensitive() {
         assertEquals(ComparisonOperator.GREATER_THAN, ComparisonOperator.fromString("greater_than"));
-        assertEquals(ComparisonOperator.LESS_THAN_EQUAL, ComparisonOperator.fromString("LESS_THAN_EQUAL"));
+        assertEquals(
+                ComparisonOperator.LESS_THAN_EQUAL, ComparisonOperator.fromString("LESS_THAN_EQUAL"));
     }
 
     /**

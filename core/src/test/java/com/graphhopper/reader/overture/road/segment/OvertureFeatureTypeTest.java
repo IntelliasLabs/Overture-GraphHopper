@@ -1,7 +1,8 @@
 package com.graphhopper.reader.overture.road.segment;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class OvertureFeatureTypeTest {
 
@@ -21,12 +22,13 @@ class OvertureFeatureTypeTest {
     @Test
     void testFromStringValidMixedCase() {
         assertEquals(OvertureFeatureType.LAND_USE, OvertureFeatureType.fromString("Land_Use"));
-        assertEquals(OvertureFeatureType.DIVISION_BOUNDARY, OvertureFeatureType.fromString("Division_Boundary"));
+        assertEquals(
+                OvertureFeatureType.DIVISION_BOUNDARY, OvertureFeatureType.fromString("Division_Boundary"));
     }
 
     @Test
     void testFromStringThrowsOnNull() {
-       assertNull(OvertureFeatureType.fromString(null));
+        assertNull(OvertureFeatureType.fromString(null));
     }
 
     @Test

@@ -11,8 +11,17 @@ import com.graphhopper.util.EdgeIteratorState;
  * Validates 'LINK' subclass only for major road categories (Motorway to Tertiary)
  * to ensure consistency with highway hierarchy.
  */
-public final class OvertureRoadClassLinkParser {
-    private OvertureRoadClassLinkParser() {}
+public final class OvertureRoadClassLinkParser implements OvertureTagParser {
+
+    private final BooleanEncodedValue linkEnc;
+
+    /**
+     * @param linkEnc the encoded value representing link
+     */
+    public OvertureRoadClassLinkParser(BooleanEncodedValue linkEnc) {
+        this.linkEnc = linkEnc;
+    }
+
     /**
      * Determines if a segment is a connector (link/ramp).
      * Only road classes that belong to the main network hierarchy can be links.
@@ -32,12 +41,13 @@ public final class OvertureRoadClassLinkParser {
     /**
      * Determines whether the given segment is a link and applies it to the edge.
      *
-     * @param edge      the graph edge to update
-     * @param segment   the Overture road segment
-     * @param lincEnc the encoded value representing link
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; link status comes entirely from the segment
      */
-    public static void parseLink(
-            EdgeIteratorState edge, OvertureRoadSegment segment, BooleanEncodedValue lincEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         var props = segment.getProperties();
         if (props == null) return;
 
@@ -45,6 +55,6 @@ public final class OvertureRoadClassLinkParser {
         OvertureRoadSubclass overtureSubclass = props.getSubclass();
 
         boolean isLink = isLink(overtureClass, overtureSubclass);
-        edge.set(lincEnc, isLink);
+        edge.set(linkEnc, isLink);
     }
 }

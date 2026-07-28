@@ -8,7 +8,7 @@ import com.graphhopper.config.Profile;
 import com.graphhopper.util.CustomModel;
 import com.graphhopper.util.Parameters;
 import com.graphhopper.util.shapes.GHPoint;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 
 import java.util.Arrays;
 
@@ -33,7 +33,7 @@ public class HeadingExample {
      */
     static GraphHopper createGraphHopperInstance(String ghLoc) {
         GraphHopper hopper = new GraphHopper();
-        hopper.setDataReaderInitializer(OSMReader::new);
+        hopper.setDataReaderInitializer(OsmSupport::create);
         hopper.setDataFile(ghLoc);
         hopper.setGraphHopperLocation("target/heading-graph-cache");
         hopper.setEncodedValuesString("car_access, road_access, car_average_speed");

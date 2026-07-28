@@ -31,6 +31,26 @@ public final class OvertureSchema {
     static final String ROAD_FLAGS = "road_flags";
     static final String CONNECTORS = "connectors";
 
+    static final String ROUTES = "routes";
+    static final String DESTINATIONS = "destinations";
+    static final String PROHIBITED_TRANSITIONS = "prohibited_transitions";
+    static final String WIDTH_RULES = "width_rules";
+    static final String SUBCLASS_RULES = "subclass_rules";
+    static final String LEVEL_RULES = "level_rules";
+    static final String SOURCES = "sources";
+    static final String VERSION = "version";
+
+    /**
+     * Columns the GeoJSON schema has but GeoParquet does not.
+     *
+     * <p>{@code theme} and {@code type} identify the Overture dataset partition rather than the record,
+     * so a GeoParquet file carries them in its directory layout, not in a column. {@code level} was
+     * replaced by {@link #LEVEL_RULES}. A Parquet import therefore leaves these at their defaults
+     * legitimately, which is asserted by {@code OvertureCrossFormatEquivalenceTest} rather than left
+     * as a suspicious-looking gap.
+     */
+    static final String[] ABSENT_FROM_PARQUET = {"theme", "type", "level"};
+
     //  --- nested structures ---
 
     /// Fields related to speed limits: speed_limits.element.xxx
@@ -90,6 +110,54 @@ public final class OvertureSchema {
     /// Properties for road surface
     static final class Surface {
         static final String VALUE = "value";
+    }
+
+    /// Shared field of the simple value-plus-range rule columns (width, subclass and level rules).
+    static final class Rule {
+        static final String VALUE = "value";
+    }
+
+    /// Fields of a route element: routes.element.xxx
+    static final class Route {
+        static final String NAME = "name";
+        static final String NETWORK = "network";
+        static final String REF = "ref";
+        static final String SYMBOL = "symbol";
+        static final String WIKIDATA = "wikidata";
+    }
+
+    /// Fields of a source element: sources.element.xxx
+    static final class Source {
+        static final String PROPERTY = "property";
+        static final String DATASET = "dataset";
+        static final String LICENSE = "license";
+        static final String RECORD_ID = "record_id";
+        static final String UPDATE_TIME = "update_time";
+        static final String CONFIDENCE = "confidence";
+    }
+
+    /// Fields of a prohibited-transition element: prohibited_transitions.element.xxx
+    static final class ProhibitedTransition {
+        static final String SEQUENCE = "sequence";
+        static final String FINAL_HEADING = "final_heading";
+
+        /// Fields inside each sequence entry: ...sequence.element.xxx
+        static final String CONNECTOR_ID = "connector_id";
+        static final String SEGMENT_ID = "segment_id";
+    }
+
+    /// Fields of a destination element: destinations.element.xxx
+    static final class Destination {
+        static final String LABELS = "labels";
+        static final String SYMBOLS = "symbols";
+        static final String FROM_CONNECTOR_ID = "from_connector_id";
+        static final String TO_SEGMENT_ID = "to_segment_id";
+        static final String TO_CONNECTOR_ID = "to_connector_id";
+        static final String FINAL_HEADING = "final_heading";
+
+        /// Fields inside each label entry: ...labels.element.xxx
+        static final String LABEL_VALUE = "value";
+        static final String LABEL_TYPE = "type";
     }
 
     /// Properties for road flags

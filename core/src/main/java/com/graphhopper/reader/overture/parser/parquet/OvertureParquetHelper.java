@@ -16,9 +16,23 @@ import com.graphhopper.reader.overture.names.*;
 import com.graphhopper.reader.overture.parser.OvertureParserFilter;
 import com.graphhopper.reader.overture.road.flags.OvertureRoadFlags;
 import com.graphhopper.reader.overture.road.segment.OvertureConnector;
+import com.graphhopper.reader.overture.road.segment.OvertureRoadSubclass;
+import com.graphhopper.reader.overture.road.segment.OvertureRoute;
+import com.graphhopper.reader.overture.road.segment.OvertureSource;
+import com.graphhopper.reader.overture.road.segment.destination.OvertureDestination;
+import com.graphhopper.reader.overture.road.segment.destination.OvertureDestinationLabel;
+import com.graphhopper.reader.overture.road.segment.destination.OvertureDestinationLabelType;
+import com.graphhopper.reader.overture.road.segment.destination.OvertureDestinationSymbol;
+import com.graphhopper.reader.overture.road.segment.rule.OvertureLevelRule;
+import com.graphhopper.reader.overture.road.segment.rule.OvertureProhibitedTransition;
+import com.graphhopper.reader.overture.road.segment.rule.OvertureSubclassRule;
+import com.graphhopper.reader.overture.road.segment.rule.OvertureTransitionSequenceItem;
+import com.graphhopper.reader.overture.road.segment.rule.OvertureWidthRule;
 import com.graphhopper.reader.overture.road.surface.OvertureRoadSurface;
 import com.graphhopper.reader.overture.road.surface.RoadSurfaceType;
 import java.nio.ByteBuffer;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import org.apache.avro.generic.GenericRecord;
 import org.locationtech.jts.geom.Geometry;
@@ -399,7 +413,8 @@ public class OvertureParquetHelper {
                 }
             }
 
-            return new OvertureNames(primary,
+            return new OvertureNames(
+                    primary,
                     commonMap != null ? commonMap : emptyMap(),
                     rulesList != null ? rulesList : emptyList());
 
@@ -591,5 +606,229 @@ public class OvertureParquetHelper {
         }
 
         return new VehicleAttributes(dimension, comparison, value, units);
+    }
+
+    // =============================================================================
+    // RANGE-SCOPED RULES, ROUTES, DESTINATIONS, SOURCES, PROHIBITED TRANSITIONS
+    // =============================================================================
+    //
+    // These columns are all present in Overture GeoParquet and were all being dropped: the Parquet
+    // mapping passed emptyList() for every one of them while the GeoJSON mapping extracted them. On
+    // one
+    // 7601-segment extract that silently discarded subclass rules on 1530 segments, prohibited
+    // transitions on 105, routes on 110, level rules on 92, width rules on 45 and destinations on 19.
+    //
+    // Three of these are linearly referenced, which makes the loss worse than missing metadata:
+    // SplitPointCollector splits a segment wherever a property's range starts or ends, so a Parquet
+    // import produced sub-segments that a GeoJSON import of the same area split further.
+
+    /**
+     * Parses {@code width_rules}: the physical road width over a linear range.
+     *
+     * @param rawWidthRules raw object from the {@code width_rules} column
+     * @param segmentId contextual segment ID for logging
+     * @return the parsed rules, empty when the column is absent or holds nothing usable
+     */
+    public static List<OvertureWidthRule> parseWidthRules(Object rawWidthRules, String segmentId) {
+        return parseList(rawWidthRules, OvertureSchema.WIDTH_RULES, segmentId, item -> {
+            if (!(item instanceof GenericRecord rec)) return null;
+            Double value = extractDouble(getValOrNull(rec, OvertureSchema.Rule.VALUE));
+            // A width of zero or less is a data error, not "no width"; dropping it keeps a nonsense
+            // value out of any future max_width parser.
+            if (value == null || value <= 0) return null;
+            return new OvertureWidthRule(
+                    value, parseRange(getValOrNull(rec, OvertureSchema.Scope.BETWEEN)));
+        });
+    }
+
+    /**
+     * Parses {@code subclass_rules}: a subclass that applies over part of the segment only.
+     *
+     * @param rawSubclassRules raw object from the {@code subclass_rules} column
+     * @param segmentId contextual segment ID for logging
+     * @return the parsed rules, empty when the column is absent or holds nothing usable
+     */
+    public static List<OvertureSubclassRule> parseSubclassRules(
+            Object rawSubclassRules, String segmentId) {
+        return parseList(rawSubclassRules, OvertureSchema.SUBCLASS_RULES, segmentId, item -> {
+            if (!(item instanceof GenericRecord rec)) return null;
+            OvertureRoadSubclass value =
+                    OvertureRoadSubclass.fromString(extractString(rec, OvertureSchema.Rule.VALUE));
+            // Honour the same subclass filter the top-level subclass goes through, otherwise a filtered
+            // subclass could re-enter the model through a rule.
+            if (value == null
+                    || !OvertureParserFilter.INSTANCE.getRoadSubclassFilter().isAllowed(value)) {
+                return null;
+            }
+            return new OvertureSubclassRule(
+                    value, parseRange(getValOrNull(rec, OvertureSchema.Scope.BETWEEN)));
+        });
+    }
+
+    /**
+     * Parses {@code level_rules}: the z-order level over a linear range, used to tell crossing ways
+     * apart.
+     *
+     * @param rawLevelRules raw object from the {@code level_rules} column
+     * @param segmentId contextual segment ID for logging
+     * @return the parsed rules, empty when the column is absent or holds nothing usable
+     */
+    public static List<OvertureLevelRule> parseLevelRules(Object rawLevelRules, String segmentId) {
+        return parseList(rawLevelRules, OvertureSchema.LEVEL_RULES, segmentId, item -> {
+            if (!(item instanceof GenericRecord rec)) return null;
+            Double value = extractDouble(getValOrNull(rec, OvertureSchema.Rule.VALUE));
+            // Level 0 is meaningful here (ground level), unlike width, so only absence is rejected.
+            if (value == null) return null;
+            return new OvertureLevelRule(
+                    (int) Math.round(value), parseRange(getValOrNull(rec, OvertureSchema.Scope.BETWEEN)));
+        });
+    }
+
+    /**
+     * Parses {@code routes}: the named road networks a segment belongs to.
+     *
+     * @param rawRoutes raw object from the {@code routes} column
+     * @param segmentId contextual segment ID for logging
+     * @return the parsed routes, empty when the column is absent or holds nothing usable
+     */
+    public static List<OvertureRoute> parseRoutes(Object rawRoutes, String segmentId) {
+        return parseList(rawRoutes, OvertureSchema.ROUTES, segmentId, item -> {
+            if (!(item instanceof GenericRecord rec)) return null;
+            return new OvertureRoute(
+                    extractString(rec, OvertureSchema.Route.NAME),
+                    extractString(rec, OvertureSchema.Route.NETWORK),
+                    extractString(rec, OvertureSchema.Route.REF),
+                    extractString(rec, OvertureSchema.Route.SYMBOL),
+                    extractString(rec, OvertureSchema.Route.WIKIDATA),
+                    parseRange(getValOrNull(rec, OvertureSchema.Scope.BETWEEN)));
+        });
+    }
+
+    /**
+     * Parses {@code sources}: per-property provenance.
+     *
+     * @param rawSources raw object from the {@code sources} column
+     * @param segmentId contextual segment ID for logging
+     * @return the parsed sources, empty when the column is absent or holds nothing usable
+     */
+    public static List<OvertureSource> parseSources(Object rawSources, String segmentId) {
+        return parseList(rawSources, OvertureSchema.SOURCES, segmentId, item -> {
+            if (!(item instanceof GenericRecord rec)) return null;
+            Double confidence = extractDouble(getValOrNull(rec, OvertureSchema.Source.CONFIDENCE));
+            return new OvertureSource(
+                    extractString(rec, OvertureSchema.Source.PROPERTY),
+                    extractString(rec, OvertureSchema.Source.DATASET),
+                    extractString(rec, OvertureSchema.Source.LICENSE),
+                    extractString(rec, OvertureSchema.Source.RECORD_ID),
+                    parseUpdateTime(extractString(rec, OvertureSchema.Source.UPDATE_TIME), segmentId),
+                    confidence == null ? 0 : confidence,
+                    parseRange(getValOrNull(rec, OvertureSchema.Scope.BETWEEN)));
+        });
+    }
+
+    /**
+     * @return the parsed timestamp, or {@code null} when absent or unparseable. A bad timestamp must not
+     *     lose the rest of the source record, which is why this does not throw.
+     */
+    private static OffsetDateTime parseUpdateTime(String raw, String segmentId) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return OffsetDateTime.parse(raw);
+        } catch (DateTimeParseException e) {
+            logger.debug("Unparseable source update_time '{}' on segment {}", raw, segmentId);
+            return null;
+        }
+    }
+
+    /**
+     * Parses {@code prohibited_transitions}: the turn restrictions of the Overture model.
+     *
+     * <p>Each entry is a sequence of connector-and-segment hops leading away from this segment, so a
+     * two-entry sequence is a via-way restriction. Nothing consumes these yet - GraphHopper turn
+     * restrictions are a separate piece of work - but they are extracted so the data is present for it
+     * and so {@code SplitPointCollector} can see their ranges.
+     *
+     * @param rawTransitions raw object from the {@code prohibited_transitions} column
+     * @param segmentId contextual segment ID for logging
+     * @return the parsed transitions, empty when the column is absent or holds nothing usable
+     */
+    public static List<OvertureProhibitedTransition> parseProhibitedTransitions(
+            Object rawTransitions, String segmentId) {
+        return parseList(rawTransitions, OvertureSchema.PROHIBITED_TRANSITIONS, segmentId, item -> {
+            if (!(item instanceof GenericRecord rec)) return null;
+
+            List<OvertureTransitionSequenceItem> sequence = parseList(
+                    getValOrNull(rec, OvertureSchema.ProhibitedTransition.SEQUENCE),
+                    OvertureSchema.ProhibitedTransition.SEQUENCE,
+                    segmentId,
+                    seqItem -> {
+                        if (!(seqItem instanceof GenericRecord seqRec)) return null;
+                        String segment = extractString(seqRec, OvertureSchema.ProhibitedTransition.SEGMENT_ID);
+                        // Without a target segment the restriction cannot be resolved to an edge, so it
+                        // would be silently inert rather than merely incomplete.
+                        if (segment == null || segment.isBlank()) return null;
+                        return new OvertureTransitionSequenceItem(
+                                extractString(seqRec, OvertureSchema.ProhibitedTransition.CONNECTOR_ID), segment);
+                    });
+            if (sequence.isEmpty()) return null;
+
+            TravelHeading finalHeading = TravelHeading.fromString(
+                    extractString(rec, OvertureSchema.ProhibitedTransition.FINAL_HEADING));
+            if (!OvertureParserFilter.INSTANCE.getTravelHeadingFilter().isAllowed(finalHeading)) {
+                finalHeading = null;
+            }
+
+            return new OvertureProhibitedTransition(
+                    sequence,
+                    finalHeading,
+                    parseScope(getValOrNull(rec, OvertureSchema.Scope.WHEN), segmentId),
+                    parseRange(getValOrNull(rec, OvertureSchema.Scope.BETWEEN)));
+        });
+    }
+
+    /**
+     * Parses {@code destinations}: the signposted targets of a turn.
+     *
+     * @param rawDestinations raw object from the {@code destinations} column
+     * @param segmentId contextual segment ID for logging
+     * @return the parsed destinations, empty when the column is absent or holds nothing usable
+     */
+    public static List<OvertureDestination> parseDestinations(
+            Object rawDestinations, String segmentId) {
+        return parseList(rawDestinations, OvertureSchema.DESTINATIONS, segmentId, item -> {
+            if (!(item instanceof GenericRecord rec)) return null;
+
+            List<OvertureDestinationLabel> labels = parseList(
+                    getValOrNull(rec, OvertureSchema.Destination.LABELS),
+                    OvertureSchema.Destination.LABELS,
+                    segmentId,
+                    labelItem -> {
+                        if (!(labelItem instanceof GenericRecord labelRec)) return null;
+                        String value = extractString(labelRec, OvertureSchema.Destination.LABEL_VALUE);
+                        if (value == null || value.isBlank()) return null;
+                        return new OvertureDestinationLabel(
+                                value,
+                                OvertureDestinationLabelType.fromString(
+                                        extractString(labelRec, OvertureSchema.Destination.LABEL_TYPE)));
+                    });
+
+            List<OvertureDestinationSymbol> symbols = parseList(
+                    getValOrNull(rec, OvertureSchema.Destination.SYMBOLS),
+                    OvertureSchema.Destination.SYMBOLS,
+                    segmentId,
+                    symbolItem -> OvertureDestinationSymbol.fromString(extractString(symbolItem)));
+
+            TravelHeading finalHeading =
+                    TravelHeading.fromString(extractString(rec, OvertureSchema.Destination.FINAL_HEADING));
+
+            return new OvertureDestination(
+                    labels,
+                    symbols,
+                    extractString(rec, OvertureSchema.Destination.FROM_CONNECTOR_ID),
+                    extractString(rec, OvertureSchema.Destination.TO_SEGMENT_ID),
+                    extractString(rec, OvertureSchema.Destination.TO_CONNECTOR_ID),
+                    parseScope(getValOrNull(rec, OvertureSchema.Scope.WHEN), segmentId),
+                    finalHeading);
+        });
     }
 }

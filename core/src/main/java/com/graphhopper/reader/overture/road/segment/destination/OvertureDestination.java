@@ -2,7 +2,6 @@ package com.graphhopper.reader.overture.road.segment.destination;
 
 import com.graphhopper.reader.overture.access.restriction.PropertyScopeContainer;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
-
 import java.util.List;
 import java.util.Objects;
 
@@ -23,9 +22,14 @@ public class OvertureDestination {
     private final PropertyScopeContainer when;
     private final TravelHeading finalHeading;
 
-    public OvertureDestination(List<OvertureDestinationLabel> labels, List<OvertureDestinationSymbol> symbols,
-                               String fromConnectorId, String toSegmentId, String toConnectorId,
-                               PropertyScopeContainer when, TravelHeading finalHeading) {
+    public OvertureDestination(
+            List<OvertureDestinationLabel> labels,
+            List<OvertureDestinationSymbol> symbols,
+            String fromConnectorId,
+            String toSegmentId,
+            String toConnectorId,
+            PropertyScopeContainer when,
+            TravelHeading finalHeading) {
         this.labels = labels;
         this.symbols = symbols;
         this.fromConnectorId = fromConnectorId;
@@ -105,30 +109,36 @@ public class OvertureDestination {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof OvertureDestination that)) return false;
-        return Objects.equals(getLabels(), that.getLabels()) &&
-                Objects.equals(getSymbols(), that.getSymbols()) &&
-                Objects.equals(getFromConnectorId(), that.getFromConnectorId()) &&
-                Objects.equals(getToSegmentId(), that.getToSegmentId()) &&
-                Objects.equals(getToConnectorId(), that.getToConnectorId()) &&
-                Objects.equals(getWhen(), that.getWhen())
+        return Objects.equals(getLabels(), that.getLabels())
+                && Objects.equals(getSymbols(), that.getSymbols())
+                && Objects.equals(getFromConnectorId(), that.getFromConnectorId())
+                && Objects.equals(getToSegmentId(), that.getToSegmentId())
+                && Objects.equals(getToConnectorId(), that.getToConnectorId())
+                && Objects.equals(getWhen(), that.getWhen())
                 && getFinalHeading() == that.getFinalHeading();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getLabels(), getSymbols(), getFromConnectorId(), getToSegmentId(), getToConnectorId(), getWhen(), getFinalHeading());
+        return Objects.hash(
+                getLabels(),
+                getSymbols(),
+                getFromConnectorId(),
+                getToSegmentId(),
+                getToConnectorId(),
+                getWhen(),
+                getFinalHeading());
     }
 
     @Override
     public String toString() {
-        return "OvertureDestination{" +
-                "labels=" + labels +
-                ", symbols=" + symbols +
-                ", fromConnectorId='" + fromConnectorId + '\'' +
-                ", toSegmentId='" + toSegmentId + '\'' +
-                ", toConnectorId='" + toConnectorId + '\'' +
-                ", when=" + when +
-                ", finalHeading=" + finalHeading +
-                '}';
+        return "OvertureDestination{" + "labels="
+                + labels + ", symbols="
+                + symbols + ", fromConnectorId='"
+                + fromConnectorId + '\'' + ", toSegmentId='"
+                + toSegmentId + '\'' + ", toConnectorId='"
+                + toConnectorId + '\'' + ", when="
+                + when + ", finalHeading="
+                + finalHeading + '}';
     }
 }

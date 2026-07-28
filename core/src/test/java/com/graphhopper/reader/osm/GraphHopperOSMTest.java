@@ -56,7 +56,7 @@ public class GraphHopperOSMTest {
     private static final String testOsm3 = "./src/test/resources/com/graphhopper/reader/osm/test-osm3.xml";
     private static final String testOsm8 = "./src/test/resources/com/graphhopper/reader/osm/test-osm8.xml";
     private GraphHopper instance;
-    private final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private final DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     @BeforeEach
     public void setUp() {

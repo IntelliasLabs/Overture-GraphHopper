@@ -29,7 +29,7 @@ import com.graphhopper.storage.Graph;
 import com.graphhopper.util.*;
 import com.graphhopper.util.shapes.GHPoint;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +66,7 @@ public class RoutingAlgorithmWithOSMTest {
     private static final String GH_LOCATION = "target/routing-algorithm-with-osm-test-gh";
     private final DistanceCalc distCalc = DistanceCalcEarth.DIST_EARTH;
 
-    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static final DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     @BeforeEach
     @AfterEach

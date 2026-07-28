@@ -9,31 +9,42 @@ import com.graphhopper.util.EdgeIteratorState;
 /**
  * Parser for mapping Overture road surface types to GraphHopper's {@link Surface} enum.
  */
-public final class OvertureRoadSurfaceParser {
-    private OvertureRoadSurfaceParser() {}
+public final class OvertureRoadSurfaceParser implements OvertureTagParser {
+
+    private final EnumEncodedValue<Surface> surfaceEnc;
 
     /**
-     * Maps the primary surface from an {@link OvertureRoadSegment} to the provided {@link EnumEncodedValue}.
-     * Defaults to {@link Surface#PAVED} if surface information is missing.
-     *
-     * @param edge       target {@link EdgeIteratorState}
-     * @param segment    source {@link OvertureRoadSegment}
      * @param surfaceEnc target {@link Surface} encoded value
      */
-    public static void parseSurface(
-            EdgeIteratorState edge, OvertureRoadSegment segment, EnumEncodedValue<Surface> surfaceEnc) {
+    public OvertureRoadSurfaceParser(EnumEncodedValue<Surface> surfaceEnc) {
+        this.surfaceEnc = surfaceEnc;
+    }
+
+    /**
+     * Maps the primary surface from an {@link OvertureRoadSegment} to the configured {@link
+     * EnumEncodedValue}.
+     *
+     * <p>Writes {@link Surface#MISSING} when the data says nothing about the surface. It previously
+     * asserted {@link Surface#PAVED} instead, which is a confident wrong answer: custom models
+     * penalise unpaved surfaces and the car parser caps speed on bad ones, so claiming "paved" makes
+     * unsurveyed roads look better than they may be. {@code MISSING} lets consumers apply their own
+     * default rather than inheriting a guess.
+     */
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
 
         var properties = segment.getProperties();
         if (properties == null
                 || properties.getSurfaces() == null
                 || properties.getSurfaces().isEmpty()) {
-            edge.set(surfaceEnc, Surface.PAVED);
+            edge.set(surfaceEnc, Surface.MISSING);
             return;
         }
 
         var overtureSurface = properties.getSurfaces().getFirst().getSurfaceType();
         if (overtureSurface == null) {
-            edge.set(surfaceEnc, Surface.PAVED);
+            edge.set(surfaceEnc, Surface.MISSING);
             return;
         }
 
@@ -46,7 +57,9 @@ public final class OvertureRoadSurfaceParser {
      */
     private static Surface mapSurface(RoadSurfaceType roadSurfaceType) {
         return switch (roadSurfaceType) {
-            case RoadSurfaceType.PAVED, RoadSurfaceType.UNKNOWN -> Surface.PAVED;
+            case RoadSurfaceType.PAVED -> Surface.PAVED;
+                // An explicit "unknown" carries no more information than an absent surface.
+            case RoadSurfaceType.UNKNOWN -> Surface.MISSING;
             case RoadSurfaceType.UNPAVED -> Surface.UNPAVED;
             case RoadSurfaceType.GRAVEL -> Surface.GRAVEL;
             case RoadSurfaceType.DIRT -> Surface.DIRT;

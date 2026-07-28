@@ -1,9 +1,9 @@
 package com.graphhopper.reader.overture.road.segment.rule;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class OvertureLevelRuleTest {
 
@@ -37,7 +37,8 @@ class OvertureLevelRuleTest {
         OvertureLevelRule rule1 = new OvertureLevelRule(2, range);
         OvertureLevelRule rule2 = new OvertureLevelRule(2, range);
         OvertureLevelRule rule3 = new OvertureLevelRule(3, range); // Different level
-        OvertureLevelRule rule4 = new OvertureLevelRule(2, new LinearlyReferencedRange(0.1, 0.3)); // Different range
+        OvertureLevelRule rule4 =
+                new OvertureLevelRule(2, new LinearlyReferencedRange(0.1, 0.3)); // Different range
 
         // Equality checks
         assertEquals(rule1, rule2);

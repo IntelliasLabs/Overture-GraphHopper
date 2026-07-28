@@ -1,11 +1,12 @@
 package com.graphhopper.reader.overture.parser;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
+import com.graphhopper.reader.overture.road.segment.OvertureSegmentSubtype;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class OvertureExtractorTest {
 
@@ -179,7 +180,7 @@ class OvertureExtractorTest {
         OvertureRoadSegment segment = OvertureExtractor.extractSegment(feature);
         assertNotNull(segment);
         assertEquals("seg-2", segment.getId());
-        assertEquals(com.graphhopper.reader.overture.road.segment.OvertureSegmentSubtype.ROAD, segment.getProperties().getSubtype());
+        assertEquals(OvertureSegmentSubtype.ROAD, segment.getProperties().getSubtype());
     }
 
     @Test
@@ -197,13 +198,19 @@ class OvertureExtractorTest {
                 """);
         OvertureRoadSegment segment = OvertureExtractor.extractSegment(feature);
         assertNotNull(segment);
-        assertEquals(com.graphhopper.reader.overture.road.segment.OvertureSegmentSubtype.WATER, segment.getProperties().getSubtype());
+        assertEquals(OvertureSegmentSubtype.WATER, segment.getProperties().getSubtype());
         // For WATER roadClass must be null
         assertNull(segment.getProperties().getRoadClass());
     }
 
+    /**
+     * Rail is not routable by any profile this reader supports and carries no access restrictions, so
+     * an imported railway becomes a road open to cars, cyclists and pedestrians. It is now rejected on
+     * the subtype, whatever class it claims - this feature names a routable class precisely to show
+     * the class no longer decides the outcome. {@code OvertureParquetParser} rejects it the same way.
+     */
     @Test
-    void extractSegment_handlesRail_whenSubtypeRail() throws Exception {
+    void extractSegment_skipsRail_whateverClassItClaims() throws Exception {
         JsonNode feature = MAPPER.readTree("""
                 {
                   "type": "Feature",
@@ -216,10 +223,9 @@ class OvertureExtractorTest {
                   }
                 }
                 """);
-        OvertureRoadSegment segment = OvertureExtractor.extractSegment(feature);
-        assertNotNull(segment);
-        assertEquals(com.graphhopper.reader.overture.road.segment.OvertureSegmentSubtype.RAIL, segment.getProperties().getSubtype());
-        assertEquals("motorway", String.valueOf(segment.getProperties().getRoadClass()));
+        assertNull(
+                OvertureExtractor.extractSegment(feature),
+                "a railway must not reach the graph, even claiming a routable class");
     }
 
     @Test
@@ -238,6 +244,6 @@ class OvertureExtractorTest {
                 """);
         OvertureRoadSegment segment = OvertureExtractor.extractSegment(feature);
         assertNotNull(segment);
-        assertEquals(com.graphhopper.reader.overture.road.segment.OvertureSegmentSubtype.ROAD, segment.getProperties().getSubtype());
+        assertEquals(OvertureSegmentSubtype.ROAD, segment.getProperties().getSubtype());
     }
 }

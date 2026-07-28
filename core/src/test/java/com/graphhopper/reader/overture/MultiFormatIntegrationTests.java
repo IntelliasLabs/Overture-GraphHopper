@@ -15,14 +15,14 @@ import com.graphhopper.util.shapes.BBox;
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -43,7 +43,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 /**
  * Integration tests for loading graphs from different file formats and verifying their equivalence.
  */
-@Testcontainers
+// disabledWithoutDocker: this class needs a MinIO container, and without it the whole build
+// failed rather than skipping - it cannot pass on a machine with no Docker daemon.
+@Testcontainers(disabledWithoutDocker = true)
 public class MultiFormatIntegrationTests {
 
     // Minio AWS container
@@ -51,10 +53,12 @@ public class MultiFormatIntegrationTests {
     private static final String SECRET_KEY = "password";
     private static final String minioBucket = "test-bucket";
     private static final String GH_LOCATION = "target/graphhopper-test-gh";
+
     @Container
     private static MinIOContainer minio = new MinIOContainer("minio/minio")
             .withEnv("MINIO_ROOT_USER", ACCESS_KEY)
             .withEnv("MINIO_ROOT_PASSWORD", SECRET_KEY);
+
     private static S3Client minioClient;
 
     @BeforeAll
@@ -81,7 +85,7 @@ public class MultiFormatIntegrationTests {
                                         "src/test/resources/",
                                         "com/graphhopper/reader/overture/parquet/correctGeoJson_CenterOfLviv.parquet")
                                 .toFile(),
-                        (DataReaderInitializer) (baseGraph, osmParsers, config) -> new OvertureReader(baseGraph)
+                        (DataReaderInitializer) context -> new OvertureReader(context.getBaseGraph())
                                 .setS3Client(minioClient)
                                 .setS3Source(minioBucket, "correctGeoJson_CenterOfLviv.parquet")),
                 Arguments.of(
@@ -93,7 +97,7 @@ public class MultiFormatIntegrationTests {
                                         "src/test/resources/",
                                         "com/graphhopper/reader/overture/parquet/centerOfBerlin.parquet")
                                 .toFile(),
-                        (DataReaderInitializer) (baseGraph, osmParsers, config) -> new OvertureReader(baseGraph)
+                        (DataReaderInitializer) context -> new OvertureReader(context.getBaseGraph())
                                 .setS3Client(minioClient)
                                 .setS3Source(minioBucket, "centerOfBerlin.parquet")),
                 Arguments.of(
@@ -105,7 +109,7 @@ public class MultiFormatIntegrationTests {
                                         "src/test/resources/",
                                         "com/graphhopper/reader/overture/parquet/correctGeoJson_CenterOfKyiv.parquet")
                                 .toFile(),
-                        (DataReaderInitializer) (baseGraph, osmParsers, config) -> new OvertureReader(baseGraph)
+                        (DataReaderInitializer) context -> new OvertureReader(context.getBaseGraph())
                                 .setS3Client(minioClient)
                                 .setS3Source(minioBucket, "correctGeoJson_CenterOfKyiv.parquet")));
     }
@@ -130,12 +134,12 @@ public class MultiFormatIntegrationTests {
             hopper.setGraphHopperLocation(GH_LOCATION + "-" + file.getName());
         } else hopper.setGraphHopperLocation(GH_LOCATION);
 
-        hopper.setDataReaderInitializer((baseGraph, osmParsers, config) -> ((OvertureReader)
-                initializer.initializeDataReader(baseGraph, osmParsers, config))
-                .setEncodedValueLookup(hopper.getEncodingManager()));
+        hopper.setDataReaderInitializer(
+                context -> ((OvertureReader) initializer.initializeDataReader(context))
+                        .setEncodedValueLookup(context.getEncodingManager()));
 
         hopper.setProfiles(
-                new Profile("car").setCustomModel(GHUtility.loadCustomModelFromJar("car_overture.json")));
+                new Profile("car").setCustomModel(GHUtility.loadCustomModelFromJar("car.json")));
 
         hopper.getCHPreparationHandler().setCHProfiles(new CHProfile("car"));
 
@@ -161,7 +165,8 @@ public class MultiFormatIntegrationTests {
     }
 
     private DataReaderInitializer createOvertureFileDataInitializer() {
-        return (baseGraph, osmParsers, config) -> new OvertureReader(baseGraph);
+        // The source comes off the context: the engine no longer pushes it into the reader afterwards.
+        return context -> new OvertureReader(context.getBaseGraph()).setFile(context.getSourceFile());
     }
 
     private void putFileInMimoContainer(File file) {
@@ -261,5 +266,4 @@ public class MultiFormatIntegrationTests {
 
         return true;
     }
-
 }

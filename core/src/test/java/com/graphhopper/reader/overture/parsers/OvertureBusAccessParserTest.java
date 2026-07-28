@@ -1,160 +1,158 @@
 package com.graphhopper.reader.overture.parsers;
 
+import static org.mockito.Mockito.*;
+
 import com.graphhopper.reader.overture.access.restriction.AccessType;
 import com.graphhopper.reader.overture.access.restriction.OvertureAccessRestriction;
 import com.graphhopper.reader.overture.access.restriction.PropertyScopeContainer;
+import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelMode;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadProperties;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
 import com.graphhopper.routing.ev.BooleanEncodedValue;
-import com.graphhopper.routing.ev.SimpleBooleanEncodedValue;
 import com.graphhopper.util.EdgeIteratorState;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+class OvertureBusAccessParserTest {
 
-import static org.mockito.Mockito.*;
+    private EdgeIteratorState edge;
+    private OvertureRoadSegment segment;
+    private OvertureRoadProperties properties;
+    private BooleanEncodedValue accessEnc;
 
-public class OvertureBusAccessParserTest {
+    @BeforeEach
+    void setup() {
+        edge = mock(EdgeIteratorState.class);
+        segment = mock(OvertureRoadSegment.class);
+        properties = mock(OvertureRoadProperties.class);
+        accessEnc = mock(BooleanEncodedValue.class);
 
-    @Test
-    public void parseAccessTest_BusAllowed() {
-        ArrayList<TravelMode> travelModes = new ArrayList<>(List.of(TravelMode.BUS));
-        List<OvertureAccessRestriction> restrictions = List.of(
-                new OvertureAccessRestriction(AccessType.ALLOWED, PropertyScopeContainer.ofMode(travelModes), null)
-        );
+        when(segment.getProperties()).thenReturn(properties);
+        when(segment.isAccessible()).thenReturn(true);
+    }
 
-        OvertureRoadSegment segment = mockSegment(restrictions);
+    private void parse() {
+        new OvertureBusAccessParser(accessEnc).handleSegment(edge, segment, null);
+    }
 
-        EdgeIteratorState edge = mock(EdgeIteratorState.class);
-        BooleanEncodedValue busEnc = new SimpleBooleanEncodedValue("bus", true);
-
-        OvertureBusAccessParser.parseAccess(edge, segment, busEnc);
-
-        verify(edge).set(busEnc, true);
+    private static PropertyScopeContainer mode(TravelMode... modes) {
+        return PropertyScopeContainer.ofMode(new ArrayList<>(List.of(modes)));
     }
 
     @Test
-    void parseAccessTest_BusExclusive() {
-        ArrayList<TravelMode> travelModesBus = new ArrayList<>(List.of(TravelMode.BUS));
-        ArrayList<TravelMode> travelModesCar = new ArrayList<>(List.of(TravelMode.MOTOR_VEHICLE));
-        List<OvertureAccessRestriction> restrictions = List.of(
-                new OvertureAccessRestriction(AccessType.ALLOWED, PropertyScopeContainer.ofMode(travelModesBus), null),
-                new OvertureAccessRestriction(AccessType.DENIED, PropertyScopeContainer.ofMode(travelModesCar), null)
-        );
+    void noRestrictionsAllowsBothDirections() {
+        when(properties.getAccessRestrictions()).thenReturn(Collections.emptyList());
 
-        OvertureRoadSegment segment = mockSegment(restrictions);
+        parse();
 
-        EdgeIteratorState edge = mock(EdgeIteratorState.class);
-        BooleanEncodedValue busEnc = new SimpleBooleanEncodedValue("bus", true);
-
-        OvertureBusAccessParser.parseAccess(edge, segment, busEnc);
-
-        verify(edge).set(busEnc, true);
+        verify(edge).set(accessEnc, true, true);
     }
 
     @Test
-    void parseAccessTest_BusDenied() {
-        ArrayList<TravelMode> travelModes = new ArrayList<>(List.of(TravelMode.BUS));
-        List<OvertureAccessRestriction> restrictions = List.of(
-                new OvertureAccessRestriction(AccessType.DENIED, PropertyScopeContainer.ofMode(travelModes), null)
-        );
+    void nullRestrictionsAllowsBothDirections() {
+        when(properties.getAccessRestrictions()).thenReturn(null);
 
-        OvertureRoadSegment segment = mockSegment(restrictions);
+        parse();
 
-        EdgeIteratorState edge = mock(EdgeIteratorState.class);
-        BooleanEncodedValue busEnc = new SimpleBooleanEncodedValue("bus", true);
-
-        OvertureBusAccessParser.parseAccess(edge, segment, busEnc);
-
-        verify(edge).set(busEnc, false);
+        verify(edge).set(accessEnc, true, true);
     }
 
     @Test
-    void parseAccessTest_MotorVehicleDenied() {
-        ArrayList<TravelMode> travelModes = new ArrayList<>(List.of(TravelMode.MOTOR_VEHICLE));
-        List<OvertureAccessRestriction> restrictions = List.of(
-                new OvertureAccessRestriction(AccessType.DENIED, PropertyScopeContainer.ofMode(travelModes), null)
-        );
+    void busDeniedClosesBothDirections() {
+        when(properties.getAccessRestrictions())
+                .thenReturn(
+                        List.of(new OvertureAccessRestriction(AccessType.DENIED, mode(TravelMode.BUS), null)));
 
-        OvertureRoadSegment segment = mockSegment(restrictions);
+        parse();
 
-        EdgeIteratorState edge = mock(EdgeIteratorState.class);
-        BooleanEncodedValue busEnc = new SimpleBooleanEncodedValue("bus", true);
-
-        OvertureBusAccessParser.parseAccess(edge, segment, busEnc);
-
-        verify(edge).set(busEnc, false);
+        verify(edge).set(accessEnc, false, false);
     }
 
     @Test
-    void parseAccessTest_MotorVehicleAllowed() {
-        ArrayList<TravelMode> travelModes = new ArrayList<>(List.of(TravelMode.MOTOR_VEHICLE));
-        List<OvertureAccessRestriction> restrictions = List.of(
-                new OvertureAccessRestriction(AccessType.ALLOWED, PropertyScopeContainer.ofMode(travelModes), null)
-        );
+    @DisplayName("A motor_vehicle denial closes the road to buses through the mode hierarchy")
+    void motorVehicleDenialAppliesToBuses() {
+        when(properties.getAccessRestrictions())
+                .thenReturn(List.of(new OvertureAccessRestriction(
+                        AccessType.DENIED, mode(TravelMode.MOTOR_VEHICLE), null)));
 
-        OvertureRoadSegment segment = mockSegment(restrictions);
+        parse();
 
-        EdgeIteratorState edge = mock(EdgeIteratorState.class);
-        BooleanEncodedValue busEnc = new SimpleBooleanEncodedValue("bus", true);
-
-        OvertureBusAccessParser.parseAccess(edge, segment, busEnc);
-
-        verify(edge).set(busEnc, true);
+        verify(edge).set(accessEnc, false, false);
     }
 
     @Test
-    void parseAccessTest_NoRestrictions() {
+    @DisplayName("An explicit bus allowance lifts a broader motor_vehicle denial")
+    void busAllowanceOverridesMotorVehicleDenial() {
+        when(properties.getAccessRestrictions())
+                .thenReturn(List.of(
+                        new OvertureAccessRestriction(AccessType.DENIED, mode(TravelMode.MOTOR_VEHICLE), null),
+                        new OvertureAccessRestriction(AccessType.ALLOWED, mode(TravelMode.BUS), null)));
 
-        OvertureRoadSegment segment = mockSegment(null);
+        parse();
 
-        EdgeIteratorState edge = mock(EdgeIteratorState.class);
-        BooleanEncodedValue busEnc = new SimpleBooleanEncodedValue("bus", true);
-
-        OvertureBusAccessParser.parseAccess(edge, segment, busEnc);
-
-        verify(edge).set(busEnc, true);
+        verify(edge).set(accessEnc, true, true);
     }
 
     @Test
-    void parseAccessTest_AllAllowed() {
-        List<OvertureAccessRestriction> restrictions = List.of(
-                new OvertureAccessRestriction(AccessType.ALLOWED, null, null)
-        );
+    @DisplayName("A bus-only road stays open to buses whatever the restriction order")
+    void busAllowanceOverridesMotorVehicleDenialWhateverTheOrder() {
+        when(properties.getAccessRestrictions())
+                .thenReturn(List.of(
+                        new OvertureAccessRestriction(AccessType.ALLOWED, mode(TravelMode.BUS), null),
+                        new OvertureAccessRestriction(
+                                AccessType.DENIED, mode(TravelMode.MOTOR_VEHICLE), null)));
 
-        OvertureRoadSegment segment = mockSegment(restrictions);
+        parse();
 
-        EdgeIteratorState edge = mock(EdgeIteratorState.class);
-        BooleanEncodedValue busEnc = new SimpleBooleanEncodedValue("bus", true);
-
-        OvertureBusAccessParser.parseAccess(edge, segment, busEnc);
-
-        verify(edge).set(busEnc, true);
+        verify(edge).set(accessEnc, true, true);
     }
 
     @Test
-    void parseAccessTest_AllDenied() {
-        List<OvertureAccessRestriction> restrictions = List.of(
-                new OvertureAccessRestriction(AccessType.DENIED, null, null)
-        );
+    @DisplayName("An unconditional denial closes the road, as it does for car, bike and foot")
+    void generalDenialClosesTheRoad() {
+        when(properties.getAccessRestrictions())
+                .thenReturn(List.of(new OvertureAccessRestriction(AccessType.DENIED, null, null)));
 
-        OvertureRoadSegment segment = mockSegment(restrictions);
+        parse();
 
-        EdgeIteratorState edge = mock(EdgeIteratorState.class);
-        BooleanEncodedValue busEnc = new SimpleBooleanEncodedValue("bus", true);
-
-        OvertureBusAccessParser.parseAccess(edge, segment, busEnc);
-
-        verify(edge).set(busEnc, false);
+        verify(edge).set(accessEnc, false, false);
     }
 
-    private OvertureRoadSegment mockSegment(List<OvertureAccessRestriction> restrictions) {
-        OvertureRoadSegment segment = mock(OvertureRoadSegment.class);
-        OvertureRoadProperties props = mock(OvertureRoadProperties.class);
-        when(segment.getProperties()).thenReturn(props);
-        when(props.getAccessRestrictions()).thenReturn(restrictions);
-        return segment;
+    @Test
+    @DisplayName("A backward-heading denial leaves the forward direction open")
+    void headingScopedDenialIsDirectional() {
+        // The old implementation wrote one non-directional value, so this oneway denial closed the road
+        // to buses in both directions - the same defect that was fixed for car, bike and foot.
+        PropertyScopeContainer backward = mock(PropertyScopeContainer.class);
+        when(backward.getHeading()).thenReturn(TravelHeading.BACKWARD);
+        when(backward.hasMode()).thenReturn(true);
+        when(backward.getMode()).thenReturn(new ArrayList<>(List.of(TravelMode.MOTOR_VEHICLE)));
+
+        OvertureAccessRestriction restriction = mock(OvertureAccessRestriction.class);
+        when(restriction.hasAccessType()).thenReturn(true);
+        when(restriction.getAccessType()).thenReturn(AccessType.DENIED);
+        when(restriction.hasWhen()).thenReturn(true);
+        when(restriction.getWhen()).thenReturn(backward);
+
+        when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
+
+        parse();
+
+        verify(edge).set(accessEnc, true, false);
+    }
+
+    @Test
+    @DisplayName("A segment closed to everything is closed to buses")
+    void inaccessibleSegmentIsClosed() {
+        when(segment.isAccessible()).thenReturn(false);
+
+        parse();
+
+        verify(edge).set(accessEnc, false, false);
     }
 }

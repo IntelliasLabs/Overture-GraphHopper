@@ -1,13 +1,13 @@
 package com.graphhopper.reader.overture.road.segment.spliter;
 
-import java.util.Optional;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.LineString;
-
+import static com.graphhopper.util.DistanceCalcEarth.R;
 import static java.lang.Math.atan2;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
-import static com.graphhopper.util.DistanceCalcEarth.R;
+
+import java.util.Optional;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.LineString;
 
 public class SegmentSplitterUtils {
 
@@ -19,8 +19,7 @@ public class SegmentSplitterUtils {
      * @return calculated total length for passed lineString parameter, for duplicate coordinates in the sequence, return the length between them as zero.
      */
     public static double calculateLength(LineString lineString) {
-        return lineString == null ? 0.0 :
-                getTotalLength(lineString.getCoordinates());
+        return lineString == null ? 0.0 : getTotalLength(lineString.getCoordinates());
     }
 
     /**
@@ -46,13 +45,13 @@ public class SegmentSplitterUtils {
     protected static double getTotalLength(Coordinate[] points) {
         double totalLength = 0.0;
         for (int i = 0; i < points.length - 1; i++)
-            totalLength +=
-                    haversineDistance(points[i], points[i + 1]);
+            totalLength += haversineDistance(points[i], points[i + 1]);
 
         return totalLength;
     }
 
-    private static Optional<Coordinate> getTargetCoordinate(Coordinate[] points, double targetLength) {
+    private static Optional<Coordinate> getTargetCoordinate(
+            Coordinate[] points, double targetLength) {
         double currentLength = 0.0;
 
         for (int i = 0; i < points.length - 1; i++) {
@@ -78,8 +77,7 @@ public class SegmentSplitterUtils {
     }
 
     static double haversineDistance(Coordinate c1, Coordinate c2) {
-        if (c1 == null || c2 == null)
-            return 0.0;
+        if (c1 == null || c2 == null) return 0.0;
 
         double lon1 = toRadians(c1.x);
         double lon2 = toRadians(c2.x);
@@ -89,9 +87,8 @@ public class SegmentSplitterUtils {
         double latDelta = lat2 - lat1;
         double lonDelta = lon2 - lon1;
 
-        double a = Math.sin(latDelta / 2) * Math.sin(latDelta / 2) +
-                Math.cos(lat1) * Math.cos(lat2) *
-                Math.sin(lonDelta / 2) * Math.sin(lonDelta / 2);
+        double a = Math.sin(latDelta / 2) * Math.sin(latDelta / 2)
+                + Math.cos(lat1) * Math.cos(lat2) * Math.sin(lonDelta / 2) * Math.sin(lonDelta / 2);
         double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
         return R * c;
@@ -120,5 +117,4 @@ public class SegmentSplitterUtils {
 
         return new Coordinate(Math.toDegrees(lon), Math.toDegrees(lat));
     }
-
 }

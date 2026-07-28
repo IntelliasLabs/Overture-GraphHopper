@@ -1,11 +1,10 @@
 package com.graphhopper.reader.overture.road.segment;
 
-import com.graphhopper.reader.overture.LinearlyReferencedRange;
-import org.junit.jupiter.api.Test;
-
-import java.time.OffsetDateTime;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.graphhopper.reader.overture.LinearlyReferencedRange;
+import java.time.OffsetDateTime;
+import org.junit.jupiter.api.Test;
 
 class OvertureSourceTest {
 
@@ -19,9 +18,8 @@ class OvertureSourceTest {
         double confidence = 0.95;
         LinearlyReferencedRange range = new LinearlyReferencedRange(0.0, 1.0);
 
-        OvertureSource source = new OvertureSource(
-                property, dataset, license, recordId, updateTime, confidence, range
-        );
+        OvertureSource source =
+                new OvertureSource(property, dataset, license, recordId, updateTime, confidence, range);
 
         assertEquals(property, source.getProperty());
         assertEquals(dataset, source.getDataset());
@@ -35,9 +33,8 @@ class OvertureSourceTest {
     @Test
     void testConstructorWithMinimalData() {
         // Test with null optional fields
-        OvertureSource source = new OvertureSource(
-                "/properties/class", "osm", null, null, null, 1.0, null
-        );
+        OvertureSource source =
+                new OvertureSource("/properties/class", "osm", null, null, null, 1.0, null);
 
         assertEquals("/properties/class", source.getProperty());
         assertNull(source.getLicense());
@@ -65,8 +62,10 @@ class OvertureSourceTest {
     void testNotEqualsDifferentRange() {
         OffsetDateTime now = OffsetDateTime.now();
 
-        OvertureSource s1 = new OvertureSource("/p", "d", "l", "r", now, 0.5, new LinearlyReferencedRange(0.0, 0.5));
-        OvertureSource s2 = new OvertureSource("/p", "d", "l", "r", now, 0.5, new LinearlyReferencedRange(0.5, 1.0));
+        OvertureSource s1 =
+                new OvertureSource("/p", "d", "l", "r", now, 0.5, new LinearlyReferencedRange(0.0, 0.5));
+        OvertureSource s2 =
+                new OvertureSource("/p", "d", "l", "r", now, 0.5, new LinearlyReferencedRange(0.5, 1.0));
 
         assertNotEquals(s1, s2);
     }

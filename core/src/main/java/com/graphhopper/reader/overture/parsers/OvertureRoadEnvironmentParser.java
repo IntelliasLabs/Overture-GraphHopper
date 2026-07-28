@@ -12,8 +12,16 @@ import com.graphhopper.util.EdgeIteratorState;
  * by evaluating segment flags and functional subtypes in order of precedence.
  * </p>
  */
-public final class OvertureRoadEnvironmentParser {
-    private OvertureRoadEnvironmentParser() {}
+public final class OvertureRoadEnvironmentParser implements OvertureTagParser {
+
+    private final EnumEncodedValue<RoadEnvironment> roadEnvironmentEnc;
+
+    /**
+     * @param roadEnvironmentEnc the encoded value representing road environment
+     */
+    public OvertureRoadEnvironmentParser(EnumEncodedValue<RoadEnvironment> roadEnvironmentEnc) {
+        this.roadEnvironmentEnc = roadEnvironmentEnc;
+    }
 
     /**
      * Parses road environment from the segment properties.
@@ -41,17 +49,15 @@ public final class OvertureRoadEnvironmentParser {
     }
 
     /**
-     * Parses {@code RoadEnvironment} from the road segment and
-     * applies it to the given graph edge
+     * Parses {@code RoadEnvironment} from the road segment and applies it to the given graph edge.
      *
-     * @param edge      the graph edge to update
-     * @param segment   the Overture road segment
-     * @param roadEnvironmentEnc the encoded value representing road environment
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; road environment comes entirely from the segment
      */
-    public static void parseRoadEnvironment(
-            EdgeIteratorState edge,
-            OvertureRoadSegment segment,
-            EnumEncodedValue<RoadEnvironment> roadEnvironmentEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         RoadEnvironment roadEnvironment = parse(segment);
         edge.set(roadEnvironmentEnc, roadEnvironment);
     }

@@ -39,7 +39,7 @@ class OvertureFootAccessParserTest {
     void accessible_NoRestrictions_AllowedBothDirections() {
         when(properties.getAccessRestrictions()).thenReturn(null);
 
-        OvertureFootAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureFootAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, true);
     }
@@ -49,7 +49,7 @@ class OvertureFootAccessParserTest {
         when(properties.getRoadClass()).thenReturn(OvertureRoadClass.PEDESTRIAN);
         when(properties.getAccessRestrictions()).thenReturn(null);
 
-        OvertureFootAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureFootAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, true);
     }
@@ -60,7 +60,7 @@ class OvertureFootAccessParserTest {
                 createRestriction(TravelMode.FOOT, AccessType.DENIED, null);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureFootAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureFootAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, false, false);
     }

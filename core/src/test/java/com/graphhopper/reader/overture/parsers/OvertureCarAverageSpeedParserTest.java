@@ -13,6 +13,7 @@ import com.graphhopper.reader.overture.road.surface.OvertureRoadSurface;
 import com.graphhopper.reader.overture.road.surface.RoadSurfaceType;
 import com.graphhopper.routing.ev.DecimalEncodedValue;
 import com.graphhopper.routing.ev.DecimalEncodedValueImpl;
+import com.graphhopper.routing.ev.MaxSpeed;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.storage.BaseGraph;
 import com.graphhopper.util.EdgeIteratorState;
@@ -24,17 +25,30 @@ import org.junit.jupiter.api.Test;
 
 public class OvertureCarAverageSpeedParserTest {
     private DecimalEncodedValue speedEnc;
+    private DecimalEncodedValue maxSpeedEnc;
     private EdgeIteratorState edge;
     private BaseGraph graph;
 
     @BeforeEach
     void setup() {
         speedEnc = new DecimalEncodedValueImpl("car_speed", 5, 5, true);
-        EncodingManager em = EncodingManager.start().add(speedEnc).build();
+        // The real MaxSpeed encoding, so the "missing means infinity" behaviour is exercised rather
+        // than approximated.
+        maxSpeedEnc = MaxSpeed.create();
+        EncodingManager em = EncodingManager.start().add(speedEnc).add(maxSpeedEnc).build();
 
         graph = new BaseGraph.Builder(em).create();
         edge = graph.edge(0, 1);
         edge.setDistance(100);
+    }
+
+    /**
+     * Runs both parsers in the order the import does. The average-speed parser reads the posted limit
+     * back off the edge, so it only sees a limit if the max-speed parser wrote one first.
+     */
+    private void parse(OvertureRoadSegment segment) {
+        new OvertureMaxSpeedParser(maxSpeedEnc).handleSegment(edge, segment, null);
+        new OvertureCarAverageSpeedParser(speedEnc, maxSpeedEnc).handleSegment(edge, segment, null);
     }
 
     @AfterEach
@@ -48,7 +62,7 @@ public class OvertureCarAverageSpeedParserTest {
     @DisplayName("Should apply 0.9 factor to explicit max speed limits")
     void parseSpeed_ExplicitMaxSpeed() {
         OvertureRoadSegment segment = createSegment(100.0, OvertureRoadClass.MOTORWAY, null, null);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(90.0, edge.get(speedEnc), 0.1);
     }
 
@@ -56,7 +70,7 @@ public class OvertureCarAverageSpeedParserTest {
     @DisplayName("Should use road class defaults without 0.9 factor")
     void parseSpeed_RoadClassDefault() {
         OvertureRoadSegment segment = createSegment(null, OvertureRoadClass.PRIMARY, null, null);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(65.0, edge.get(speedEnc), 0.1);
     }
 
@@ -65,7 +79,7 @@ public class OvertureCarAverageSpeedParserTest {
     void parseSpeed_LinkSubclass() {
         OvertureRoadSegment segment =
                 createSegment(null, OvertureRoadClass.MOTORWAY, OvertureRoadSubclass.LINK, null);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(70.0, edge.get(speedEnc), 0.1);
     }
 
@@ -74,7 +88,7 @@ public class OvertureCarAverageSpeedParserTest {
     void parseSpeed_BadSurface_Gravel() {
         OvertureRoadSurface surface = new OvertureRoadSurface(RoadSurfaceType.GRAVEL, null);
         OvertureRoadSegment segment = createSegment(null, OvertureRoadClass.MOTORWAY, null, surface);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(30.0, edge.get(speedEnc), 0.1);
     }
 
@@ -83,7 +97,7 @@ public class OvertureCarAverageSpeedParserTest {
     void parseSpeed_ExplicitHighSpeedOnDirt() {
         OvertureRoadSurface surface = new OvertureRoadSurface(RoadSurfaceType.DIRT, null);
         OvertureRoadSegment segment = createSegment(120.0, OvertureRoadClass.MOTORWAY, null, surface);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(30.0, edge.get(speedEnc), 0.1);
     }
 
@@ -92,7 +106,7 @@ public class OvertureCarAverageSpeedParserTest {
     void parseSpeed_PavedSurface() {
         OvertureRoadSurface surface = new OvertureRoadSurface(RoadSurfaceType.ASPHALT, null);
         OvertureRoadSegment segment = createSegment(null, OvertureRoadClass.MOTORWAY, null, surface);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(100.0, edge.get(speedEnc), 0.1);
     }
 
@@ -100,7 +114,7 @@ public class OvertureCarAverageSpeedParserTest {
     @DisplayName("Should fallback to default speed for unknown road class")
     void parseSpeed_UnknownClass() {
         OvertureRoadSegment segment = createSegment(null, null, null, null);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(20.0, edge.get(speedEnc), 0.1);
     }
 
@@ -109,7 +123,7 @@ public class OvertureCarAverageSpeedParserTest {
     void parseSpeed_AlreadyLowSpeedOnBadSurface() {
         OvertureRoadSurface surface = new OvertureRoadSurface(RoadSurfaceType.DIRT, null);
         OvertureRoadSegment segment = createSegment(null, OvertureRoadClass.TRACK, null, surface);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(15.0, edge.get(speedEnc), 0.1);
     }
 
@@ -118,7 +132,7 @@ public class OvertureCarAverageSpeedParserTest {
     void parseSpeed_PavingStones() {
         OvertureRoadSurface surface = new OvertureRoadSurface(RoadSurfaceType.PAVING_STONES, null);
         OvertureRoadSegment segment = createSegment(null, OvertureRoadClass.MOTORWAY, null, surface);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(30.0, edge.get(speedEnc), 0.1);
     }
 
@@ -127,7 +141,7 @@ public class OvertureCarAverageSpeedParserTest {
     void parseSpeed_ExplicitOnLink() {
         OvertureRoadSegment segment =
                 createSegment(50.0, OvertureRoadClass.MOTORWAY, OvertureRoadSubclass.LINK, null);
-        OvertureCarAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        parse(segment);
         assertEquals(45.0, edge.get(speedEnc), 0.1);
     }
 

@@ -254,10 +254,39 @@ public class OvertureBikeAverageSpeedParserTest {
         OvertureRoadSegment segment =
                 createSegment(OvertureRoadClass.RESIDENTIAL, null, speedLimits, null);
 
-        OvertureBikeAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        new OvertureBikeAverageSpeedParser(speedEnc).handleSegment(edge, segment, null);
 
         assertEquals(15.0, edge.get(speedEnc), 0.1);
-        //        assertEquals(10.0, edge.getReverse(speedEnc), 0.1);
+        // Previously commented out: parseSpeed computed the backward speed and then discarded it, so
+        // both directions carried the forward value.
+        assertEquals(10.0, edge.getReverse(speedEnc), 0.1);
+    }
+
+    @Test
+    @DisplayName("A one-direction encoding stores the lower of the two speeds")
+    void bidirectional_singleDirectionEncoding() {
+        DecimalEncodedValue oneWayEnc = new DecimalEncodedValueImpl("bike_speed_1dir", 5, 5, false);
+        EncodingManager em = EncodingManager.start().add(oneWayEnc).build();
+        try (BaseGraph oneDirGraph = new BaseGraph.Builder(em).create()) {
+            EdgeIteratorState oneDirEdge = oneDirGraph.edge(0, 1);
+            oneDirEdge.setDistance(100);
+
+            PropertyScopeContainer forwardScope = PropertyScopeContainer.ofHeading(TravelHeading.FORWARD);
+            PropertyScopeContainer backwardScope =
+                    PropertyScopeContainer.ofHeading(TravelHeading.BACKWARD);
+            List<OvertureSpeedLimit> speedLimits = List.of(
+                    new OvertureSpeedLimit(
+                            new OvertureSpeed(15.0, SpeedUnit.KM_H), null, null, null, forwardScope),
+                    new OvertureSpeedLimit(
+                            new OvertureSpeed(10.0, SpeedUnit.KM_H), null, null, null, backwardScope));
+            OvertureRoadSegment segment =
+                    createSegment(OvertureRoadClass.RESIDENTIAL, null, speedLimits, null);
+
+            new OvertureBikeAverageSpeedParser(oneWayEnc).handleSegment(oneDirEdge, segment, null);
+
+            // The lower value, so the stored speed never overstates the slower direction.
+            assertEquals(10.0, oneDirEdge.get(oneWayEnc), 0.1);
+        }
     }
 
     // Service Road Tests

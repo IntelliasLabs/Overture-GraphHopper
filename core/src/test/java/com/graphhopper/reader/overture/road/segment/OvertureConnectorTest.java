@@ -1,7 +1,8 @@
 package com.graphhopper.reader.overture.road.segment;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class OvertureConnectorTest {
 
@@ -12,8 +13,10 @@ class OvertureConnectorTest {
 
         OvertureConnector connector = new OvertureConnector(expectedId, expectedAt);
 
-        assertEquals(expectedId, connector.getConnectorId(), "Connector ID should match constructor input");
-        assertEquals(expectedAt, connector.getAt(), 0.00001, "At position should match constructor input");
+        assertEquals(
+                expectedId, connector.getConnectorId(), "Connector ID should match constructor input");
+        assertEquals(
+                expectedAt, connector.getAt(), 0.00001, "At position should match constructor input");
     }
 
     @Test
@@ -56,7 +59,8 @@ class OvertureConnectorTest {
     @Test
     void testNotEqualsDifferentClass() {
         OvertureConnector c1 = new OvertureConnector("gers:1", 0.5);
-        assertNotEquals("Some String", c1, "Object should not be equal to an instance of a different class");
+        assertNotEquals(
+                "Some String", c1, "Object should not be equal to an instance of a different class");
     }
 
     @Test
@@ -66,7 +70,8 @@ class OvertureConnectorTest {
 
         assertEquals(c1.hashCode(), c2.hashCode(), "Equal objects must have the same hash code");
 
-        // Sanity check: verify hash codes differ for different objects (not strictly required by contract but good for distribution)
+        // Sanity check: verify hash codes differ for different objects (not strictly required by
+        // contract but good for distribution)
         OvertureConnector c3 = new OvertureConnector("gers:Y", 0.33);
         assertNotEquals(c1.hashCode(), c3.hashCode());
     }

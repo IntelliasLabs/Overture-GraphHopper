@@ -1,8 +1,8 @@
 package com.graphhopper.reader.overture.road.segment;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class OvertureRoadSubclassTest {
 
@@ -10,8 +10,10 @@ class OvertureRoadSubclassTest {
     void testFromString_ValidValues() {
         assertEquals(OvertureRoadSubclass.LINK, OvertureRoadSubclass.fromString("link"));
         assertEquals(OvertureRoadSubclass.SIDEWALK, OvertureRoadSubclass.fromString("SIDEWALK"));
-        assertEquals(OvertureRoadSubclass.PARKING_AISLE, OvertureRoadSubclass.fromString("Parking_Aisle"));
-        assertEquals(OvertureRoadSubclass.CYCLE_CROSSING, OvertureRoadSubclass.fromString("cycle_crossing"));
+        assertEquals(
+                OvertureRoadSubclass.PARKING_AISLE, OvertureRoadSubclass.fromString("Parking_Aisle"));
+        assertEquals(
+                OvertureRoadSubclass.CYCLE_CROSSING, OvertureRoadSubclass.fromString("cycle_crossing"));
     }
 
     @Test

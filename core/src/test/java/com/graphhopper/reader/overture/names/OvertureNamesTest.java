@@ -1,7 +1,7 @@
 package com.graphhopper.reader.overture.names;
 
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.graphhopper.reader.overture.LinearlyReferencedRange;

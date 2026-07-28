@@ -1,9 +1,10 @@
 package com.graphhopper.reader.overture.road.segment;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.Collections;
 import java.util.List;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class OvertureRoadPropertiesTest {
 
@@ -19,7 +20,8 @@ class OvertureRoadPropertiesTest {
         int version = 5;
 
         // Construct the object
-        // Note: Passing null/empty lists for complex dependencies not under test here to keep the test focused
+        // Note: Passing null/empty lists for complex dependencies not under test here to keep the test
+        // focused
         OvertureRoadProperties props = new OvertureRoadProperties(
                 connectors,
                 Collections.emptyList(), // routes
@@ -40,7 +42,7 @@ class OvertureRoadPropertiesTest {
                 version,
                 Collections.emptyList(), // sources
                 null // names
-        );
+                );
 
         // Assertions
         assertSame(connectors, props.getConnectors());
@@ -78,7 +80,8 @@ class OvertureRoadPropertiesTest {
     @Test
     void testNotEqualsDifferentRoadClass() {
         OvertureRoadProperties p1 = createDummyProperties(1, OvertureRoadClass.MOTORWAY);
-        OvertureRoadProperties p2 = createDummyProperties(1, OvertureRoadClass.RESIDENTIAL); // Diff class
+        OvertureRoadProperties p2 =
+                createDummyProperties(1, OvertureRoadClass.RESIDENTIAL); // Diff class
 
         assertNotEquals(p1, p2);
     }
@@ -120,7 +123,6 @@ class OvertureRoadPropertiesTest {
                 OvertureFeatureType.SEGMENT,
                 1,
                 Collections.emptyList(),
-                null
-        );
+                null);
     }
 }

@@ -1,13 +1,15 @@
 package com.graphhopper.reader.overture.road.segment.destination;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class OvertureDestinationLabelTest {
 
     @Test
     void testConstructorAndGetters() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
 
         assertEquals("Berlin", label.getValue());
         assertEquals(OvertureDestinationLabelType.COUNTRY, label.getType());
@@ -15,7 +17,8 @@ class OvertureDestinationLabelTest {
 
     @Test
     void testConstructorWithRouteRef() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel("I-95", OvertureDestinationLabelType.ROUTE_REF);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel("I-95", OvertureDestinationLabelType.ROUTE_REF);
 
         assertEquals("I-95", label.getValue());
         assertEquals(OvertureDestinationLabelType.ROUTE_REF, label.getType());
@@ -23,7 +26,8 @@ class OvertureDestinationLabelTest {
 
     @Test
     void testConstructorWithNullValue() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel(null, OvertureDestinationLabelType.STREET);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel(null, OvertureDestinationLabelType.STREET);
 
         assertNull(label.getValue());
         assertEquals(OvertureDestinationLabelType.STREET, label.getType());
@@ -31,7 +35,8 @@ class OvertureDestinationLabelTest {
 
     @Test
     void testPublicFields() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel("Main Street", OvertureDestinationLabelType.STREET);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel("Main Street", OvertureDestinationLabelType.STREET);
 
         assertEquals("Main Street", label.value);
         assertEquals(OvertureDestinationLabelType.STREET, label.type);
@@ -39,8 +44,10 @@ class OvertureDestinationLabelTest {
 
     @Test
     void testEqualsWithEqualObjects() {
-        OvertureDestinationLabel label1 = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
-        OvertureDestinationLabel label2 = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label1 =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label2 =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
 
         assertEquals(label1, label2);
         assertEquals(label2, label1);
@@ -48,45 +55,54 @@ class OvertureDestinationLabelTest {
 
     @Test
     void testEqualsWithDifferentValue() {
-        OvertureDestinationLabel label1 = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
-        OvertureDestinationLabel label2 = new OvertureDestinationLabel("Paris", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label1 =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label2 =
+                new OvertureDestinationLabel("Paris", OvertureDestinationLabelType.COUNTRY);
 
         assertNotEquals(label1, label2);
     }
 
     @Test
     void testEqualsWithDifferentType() {
-        OvertureDestinationLabel label1 = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
-        OvertureDestinationLabel label2 = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.STREET);
+        OvertureDestinationLabel label1 =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label2 =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.STREET);
 
         assertNotEquals(label1, label2);
     }
 
     @Test
     void testEqualsWithNull() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
 
         assertNotEquals(null, label);
     }
 
     @Test
     void testEqualsWithDifferentClass() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
 
         assertNotEquals("Berlin", label);
     }
 
     @Test
     void testEqualsWithBothNullValues() {
-        OvertureDestinationLabel label1 = new OvertureDestinationLabel(null, OvertureDestinationLabelType.STREET);
-        OvertureDestinationLabel label2 = new OvertureDestinationLabel(null, OvertureDestinationLabelType.STREET);
+        OvertureDestinationLabel label1 =
+                new OvertureDestinationLabel(null, OvertureDestinationLabelType.STREET);
+        OvertureDestinationLabel label2 =
+                new OvertureDestinationLabel(null, OvertureDestinationLabelType.STREET);
 
         assertEquals(label1, label2);
     }
 
     @Test
     void testHashCodeConsistency() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
 
         int hash1 = label.hashCode();
         int hash2 = label.hashCode();
@@ -96,23 +112,28 @@ class OvertureDestinationLabelTest {
 
     @Test
     void testHashCodeEqualObjects() {
-        OvertureDestinationLabel label1 = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
-        OvertureDestinationLabel label2 = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label1 =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label2 =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
 
         assertEquals(label1.hashCode(), label2.hashCode());
     }
 
     @Test
     void testHashCodeDifferentObjects() {
-        OvertureDestinationLabel label1 = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
-        OvertureDestinationLabel label2 = new OvertureDestinationLabel("Paris", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label1 =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label2 =
+                new OvertureDestinationLabel("Paris", OvertureDestinationLabelType.COUNTRY);
 
         assertNotEquals(label1.hashCode(), label2.hashCode());
     }
 
     @Test
     void testToString() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel("Berlin", OvertureDestinationLabelType.COUNTRY);
 
         String result = label.toString();
 
@@ -123,7 +144,8 @@ class OvertureDestinationLabelTest {
 
     @Test
     void testToStringWithRouteRef() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel("I-95", OvertureDestinationLabelType.ROUTE_REF);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel("I-95", OvertureDestinationLabelType.ROUTE_REF);
 
         String result = label.toString();
 
@@ -132,7 +154,8 @@ class OvertureDestinationLabelTest {
 
     @Test
     void testToStringWithNullValue() {
-        OvertureDestinationLabel label = new OvertureDestinationLabel(null, OvertureDestinationLabelType.STREET);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel(null, OvertureDestinationLabelType.STREET);
 
         String result = label.toString();
 

@@ -14,7 +14,8 @@ public class OvertureRoutingExample {
 
     public static void main(String[] args) {
         String relDir = args.length == 1 ? args[0] : "";
-        GraphHopper hopper = createGraphHopperInstance(relDir + "core/files/london.geojson");
+        GraphHopper hopper = createGraphHopperInstance(
+                "/Users/user/Work/Overture/GraphHopperUA/florence_center.parquet");
         routing(hopper);
 
         hopper.close();
@@ -28,11 +29,9 @@ public class OvertureRoutingExample {
                 + "foot_road_access, mtb_rating, bike_access, bike_average_speed, "
                 + "bike_network, bike_priority, bike_road_access, surface, hazmat, track_type");
 
-        hopper.setDataReaderInitializer((baseGraph, osmParsers, config) -> {
-            OvertureReader reader = new OvertureReader(baseGraph);
-            reader.setEncodedValueLookup(hopper.getEncodingManager());
-            return reader;
-        });
+        hopper.setDataReaderInitializer(context -> new OvertureReader(context.getBaseGraph())
+                .setEncodedValueLookup(context.getEncodingManager())
+                .setFile(context.getSourceFile()));
         hopper.setDataFile(ghLoc);
 
         // specify where to store graphhopper files

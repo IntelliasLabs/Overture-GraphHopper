@@ -10,7 +10,7 @@ import java.util.Objects;
  * A single segment can belong to multiple routes.
  * </p>
  */
-public class OvertureRoute implements HasBetweenProperty  {
+public class OvertureRoute implements HasBetweenProperty {
 
     /**
      * Full name of the route (e.g., "Pacific Coast Highway").

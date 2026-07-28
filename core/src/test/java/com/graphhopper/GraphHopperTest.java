@@ -45,7 +45,7 @@ import com.graphhopper.util.shapes.BBox;
 import com.graphhopper.util.shapes.GHPoint;
 import com.graphhopper.util.shapes.GHPoint3D;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -93,7 +93,7 @@ public class GraphHopperTest {
     // when creating GH instances make sure to use this as the GH location such that it will be cleaned between tests
     private static final String GH_LOCATION = "target/graphhopper-test-gh";
 
-    private final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private final DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     @BeforeEach
     @AfterEach

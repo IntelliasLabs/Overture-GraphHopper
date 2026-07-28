@@ -1,31 +1,48 @@
 package com.graphhopper.reader.overture.road.segment.destination;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class OvertureDestinationLabelTypeTest {
 
     @Test
     void testFromStringValidLowerCase() {
-        assertEquals(OvertureDestinationLabelType.STREET, OvertureDestinationLabelType.fromString("street"));
-        assertEquals(OvertureDestinationLabelType.COUNTRY, OvertureDestinationLabelType.fromString("country"));
-        assertEquals(OvertureDestinationLabelType.ROUTE_REF, OvertureDestinationLabelType.fromString("route_ref"));
-        assertEquals(OvertureDestinationLabelType.TOWARD_ROUTE_REF, OvertureDestinationLabelType.fromString("toward_route_ref"));
-        assertEquals(OvertureDestinationLabelType.UNKNOWN, OvertureDestinationLabelType.fromString("unknown"));
+        assertEquals(
+                OvertureDestinationLabelType.STREET, OvertureDestinationLabelType.fromString("street"));
+        assertEquals(
+                OvertureDestinationLabelType.COUNTRY, OvertureDestinationLabelType.fromString("country"));
+        assertEquals(
+                OvertureDestinationLabelType.ROUTE_REF,
+                OvertureDestinationLabelType.fromString("route_ref"));
+        assertEquals(
+                OvertureDestinationLabelType.TOWARD_ROUTE_REF,
+                OvertureDestinationLabelType.fromString("toward_route_ref"));
+        assertEquals(
+                OvertureDestinationLabelType.UNKNOWN, OvertureDestinationLabelType.fromString("unknown"));
     }
 
     @Test
     void testFromStringValidUpperCase() {
-        assertEquals(OvertureDestinationLabelType.STREET, OvertureDestinationLabelType.fromString("STREET"));
-        assertEquals(OvertureDestinationLabelType.COUNTRY, OvertureDestinationLabelType.fromString("COUNTRY"));
-        assertEquals(OvertureDestinationLabelType.ROUTE_REF, OvertureDestinationLabelType.fromString("ROUTE_REF"));
+        assertEquals(
+                OvertureDestinationLabelType.STREET, OvertureDestinationLabelType.fromString("STREET"));
+        assertEquals(
+                OvertureDestinationLabelType.COUNTRY, OvertureDestinationLabelType.fromString("COUNTRY"));
+        assertEquals(
+                OvertureDestinationLabelType.ROUTE_REF,
+                OvertureDestinationLabelType.fromString("ROUTE_REF"));
     }
 
     @Test
     void testFromStringValidMixedCase() {
-        assertEquals(OvertureDestinationLabelType.STREET, OvertureDestinationLabelType.fromString("Street"));
-        assertEquals(OvertureDestinationLabelType.ROUTE_REF, OvertureDestinationLabelType.fromString("Route_Ref"));
-        assertEquals(OvertureDestinationLabelType.TOWARD_ROUTE_REF, OvertureDestinationLabelType.fromString("Toward_Route_Ref"));
+        assertEquals(
+                OvertureDestinationLabelType.STREET, OvertureDestinationLabelType.fromString("Street"));
+        assertEquals(
+                OvertureDestinationLabelType.ROUTE_REF,
+                OvertureDestinationLabelType.fromString("Route_Ref"));
+        assertEquals(
+                OvertureDestinationLabelType.TOWARD_ROUTE_REF,
+                OvertureDestinationLabelType.fromString("Toward_Route_Ref"));
     }
 
     @Test

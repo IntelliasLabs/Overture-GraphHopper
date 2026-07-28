@@ -2,12 +2,17 @@ package com.graphhopper.reader.overture;
 
 import com.carrotsearch.hppc.LongIntScatterMap;
 import com.graphhopper.reader.DataReader;
+import com.graphhopper.reader.DataReaderConfig;
+import com.graphhopper.reader.dem.EdgeElevationSmoothingMovingAverage;
+import com.graphhopper.reader.dem.EdgeElevationSmoothingRamer;
+import com.graphhopper.reader.dem.EdgeSampling;
 import com.graphhopper.reader.dem.ElevationProvider;
 import com.graphhopper.reader.overture.aws.S3ParquetInputFile;
 import com.graphhopper.reader.overture.parser.OvertureParser;
 import com.graphhopper.reader.overture.parser.parquet.OvertureParquetParser;
 import com.graphhopper.reader.overture.parsers.*;
 import com.graphhopper.reader.overture.road.flags.OvertureRoadFlags;
+import com.graphhopper.reader.overture.road.segment.OvertureConnector;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
 import com.graphhopper.reader.overture.road.segment.spliter.SegmentSplitter;
 import com.graphhopper.routing.ev.*;
@@ -21,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import org.jetbrains.annotations.Nullable;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.LineString;
 import org.slf4j.Logger;
@@ -82,9 +88,21 @@ public class OvertureReader implements DataReader {
     private S3Client s3Client;
 
     /**
-     * Maps Overture string IDs (e.g., GID) to GraphHopper's internal integer node IDs.
+     * Maps rounded coordinates to GraphHopper's internal integer node IDs.
+     *
+     * <p>The fallback identity, used for sub-segment boundaries created by a property range rather than
+     * a connector. Both boundaries of such a split are computed from one geometry, so they agree
+     * exactly and coordinates are a sound key there.
      */
     private final LongIntScatterMap nodeMap;
+
+    /**
+     * Maps Overture connector ids to GraphHopper's internal integer node IDs.
+     *
+     * <p>The primary identity. See {@link #getOrCreateNode} for why coordinates alone cannot express
+     * Overture's topology.
+     */
+    private final ConnectorNodeMap connectorNodeMap = new ConnectorNodeMap();
 
     /**
      * Provider for elevation data (DEM) to support 3D routing.
@@ -104,10 +122,78 @@ public class OvertureReader implements DataReader {
     private EncodedValueLookup encodedValueLookup;
 
     /**
+     * The parsers applied to every sub-segment, assembled from the import registry.
+     *
+     * <p>When {@code null} the reader builds a default set from the encoded values present in the
+     * lookup, which is what the deprecated single-argument constructor relies on.
+     */
+    private OvertureParsers parsers;
+
+    /**
+     * The source-agnostic import settings.
+     *
+     * <p>Applied here: {@code maxWayPointDistance} and {@code elevationMaxWayPointDistance} (geometry
+     * simplification), {@code longEdgeSamplingDistance}, {@code elevationSmoothing} with its two
+     * tuning values, {@code defaultElevation}, and — through the parser props — {@code parseWayNames}
+     * and {@code preferredLanguage}.
+     *
+     * <p>Two settings genuinely do not apply. {@code workerThreads} parallelises OSM's multi-pass node
+     * scan; Overture arrives as self-contained segments read in a single pass, so there is no pass to
+     * parallelise. {@code ignoredHighways} filters OSM {@code highway} tag values, which have no
+     * Overture equivalent — the closest analogue would be filtering on subclass, and inventing that
+     * mapping silently under an OSM-named setting would be worse than not honouring it.
+     */
+    private DataReaderConfig config = new DataReaderConfig();
+
+    /**
+     * Geometry simplification, configured from {@link #config}.
+     *
+     * <p>Overture geometry is far denser than the routing graph needs. Not simplifying it was costing
+     * storage on every edge and was the reason {@code maxWayPointDistance} appeared to do nothing on an
+     * Overture import.
+     */
+    private final RamerDouglasPeucker simplifyAlgo = new RamerDouglasPeucker();
+
+    /**
+     * Constructs a reader with an explicitly assembled parser pipeline and import settings.
+     *
+     * <p>Preferred over the other constructors: the parsers are resolved and ordered from {@code
+     * graph.encoded_values} through the import registry, so a declared value that Overture cannot fill
+     * is reported at startup rather than discovered later.
+     *
+     * @param graph the {@link BaseGraph} to store the imported data
+     * @param parsers the parsers to apply, in execution order
+     * @param config the import settings; see {@link #config} for which ones apply here
+     */
+    public OvertureReader(BaseGraph graph, OvertureParsers parsers, DataReaderConfig config) {
+        this.graph = graph;
+        this.nodeMap = new LongIntScatterMap();
+        this.parsers = parsers;
+        this.config = config;
+        this.simplifyAlgo.setMaxDistance(config.getMaxWayPointDistance());
+        this.simplifyAlgo.setElevationMaxDistance(config.getElevationMaxWayPointDistance());
+    }
+
+    /**
+     * Constructs a reader with an explicitly assembled parser pipeline and default import settings.
+     *
+     * @param graph the {@link BaseGraph} to store the imported data
+     * @param parsers the parsers to apply, in execution order
+     */
+    public OvertureReader(BaseGraph graph, OvertureParsers parsers) {
+        this(graph, parsers, new DataReaderConfig());
+    }
+
+    /**
      * Constructs a new OvertureReader.
      *
      * @param graph the {@link BaseGraph} to store the imported data.
+     * @deprecated use {@link #OvertureReader(BaseGraph, OvertureParsers, DataReaderConfig)}. This
+     *     constructor defers parser assembly until {@link #readGraph()}, building a default set from
+     *     whichever encoded values {@link #setEncodedValueLookup} supplies, which cannot report
+     *     declared-but-unfillable values because it never sees the declarations.
      */
+    @Deprecated
     public OvertureReader(BaseGraph graph) {
         this.graph = graph;
         this.nodeMap = new LongIntScatterMap();
@@ -205,10 +291,10 @@ public class OvertureReader implements DataReader {
      * </p>
      *
      * @param s3Url the full S3 URL string.
-     * @return this {@link DataReader} instance.
+     * @return this {@link OvertureReader} for method chaining.
      * @throws IllegalArgumentException if the URL does not start with "s3://" or is missing the bucket/key.
      */
-    public DataReader setS3Source(String s3Url) {
+    public OvertureReader setS3Source(String s3Url) {
         if (s3Url == null || !s3Url.startsWith("s3://")) {
             throw new IllegalArgumentException("S3 URL must start with 's3://'");
         }
@@ -231,9 +317,9 @@ public class OvertureReader implements DataReader {
      *
      * @param bucket the S3 bucket name.
      * @param key    the S3 object key.
-     * @return this {@link DataReader} instance.
+     * @return this {@link OvertureReader} for method chaining.
      */
-    public DataReader setS3Source(String bucket, String key) {
+    public OvertureReader setS3Source(String bucket, String key) {
         this.s3Bucket = bucket;
         this.s3Key = key;
         return this;
@@ -251,13 +337,12 @@ public class OvertureReader implements DataReader {
     }
 
     /**
-     * Sets the input file for the reader.
+     * Sets the local file to read from, the alternative to {@link #setS3Source(String)}.
      *
      * @param file the input file.
-     * @return this {@link DataReader} instance for chaining.
+     * @return this {@link OvertureReader} for method chaining.
      */
-    @Override
-    public DataReader setFile(File file) {
+    public OvertureReader setFile(File file) {
         this.overtureFile = file;
         return this;
     }
@@ -269,96 +354,165 @@ public class OvertureReader implements DataReader {
      */
     @Override
     public void readGraph() throws IOException {
-        List<OvertureRoadSegment> segments = parseData();
-
-        if (segments.isEmpty()) {
-            logger.info("No segments found to processed");
-            return;
-        }
-        logger.info("Loaded {} segments. Starting graph creation...", segments.size());
+        Iterable<OvertureRoadSegment> segments = parseData();
 
         NodeAccess nodeAccess = graph.getNodeAccess();
         int edgeCount = 0;
         int skippedCount = 0;
+        long segmentCount = 0;
+
+        // Resolved on the first segment rather than up front. Streaming means the segment count is not
+        // known until the source is drained, and a source with nothing in it must not demand a parser
+        // pipeline - which is what the empty-segment early return used to guarantee.
+        OvertureParsers segmentParsers = null;
+        EdgeIntAccess edgeIntAccess = graph.getEdgeAccess();
+
+        try {
+            for (OvertureRoadSegment segment : segments) {
+                if (segmentParsers == null) segmentParsers = resolveParsers();
+                segmentCount++;
+                List<OvertureRoadSegment> subsegments = SegmentSplitter.split(segment);
+                for (OvertureRoadSegment subsegment : subsegments) {
+
+                    ///  Skip if segment abandoned or under construction
+                    boolean needsSkipping = subsegment.getProperties().getFlags().stream()
+                            .anyMatch(OvertureRoadFlags::shouldSkip);
+                    if (needsSkipping) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    LineString lineString = subsegment.getLineString();
+
+                    int numPoints = (lineString != null) ? lineString.getNumPoints() : 0;
+                    if (numPoints < 2) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    /// Using the coordinate inversion: y=Lat, x=Lon
+                    Coordinate startCoord = lineString.getCoordinateN(0);
+                    Coordinate endCoord = lineString.getCoordinateN(numPoints - 1);
+                    int fromId = getOrCreateNode(
+                            connectorIdAt(subsegment, 0.0), startCoord.y, startCoord.x, nodeAccess);
+                    int toId =
+                            getOrCreateNode(connectorIdAt(subsegment, 1.0), endCoord.y, endCoord.x, nodeAccess);
+                    if (fromId == toId) continue;
+
+                    PointList fullGeometry = processGeometry(convertToPointList(lineString));
+                    PointList intermediatePoints = extractIntermediatePoints(fullGeometry);
+
+                    // Deliberately measured on the source geometry rather than the processed one. The OSM
+                    // reader derives distance from its simplified point list; here the segment already knows
+                    // its own length, and taking it from the simplified geometry instead would shorten every
+                    // edge as a side effect of a storage setting.
+                    double distance = subsegment.calculateDistance();
+
+                    EdgeIteratorState edge =
+                            graph.edge(fromId, toId).setDistance(distance).setWayGeometry(intermediatePoints);
+
+                    // Every attribute is written by a registered parser, in an order the import registry
+                    // determines from declared dependencies — max_speed before car_average_speed, for
+                    // instance, because the latter reads the former back off the edge.
+                    segmentParsers.handleSegment(
+                            edge, subsegment, new OvertureSegmentContext(fullGeometry, areaIndex, edgeIntAccess));
+
+                    edgeCount++;
+                }
+                if (edgeCount % 50000 == 0) {
+                    logger.info("Progress: {} edges created...", edgeCount);
+                }
+            }
+        } finally {
+            // The streaming source holds the open Parquet reader. A plain List - which is what the
+            // deprecated path and the unit tests supply - is not closeable and needs nothing here.
+            if (segments instanceof AutoCloseable closeable) {
+                try {
+                    closeable.close();
+                } catch (Exception e) {
+                    logger.warn("Failed to close the segment source", e);
+                }
+            }
+        }
+
+        if (segmentCount == 0) {
+            logger.info("No segments found to processed");
+            return;
+        }
+        logger.info(
+                "Finished readGraph. Segments: {}, Created: {}, Skipped: {}",
+                segmentCount,
+                edgeCount,
+                skippedCount);
+
+        if (elevationProvider != null) {
+            // Mirrors the OSM reader: elevation providers hold tile caches and file handles.
+            elevationProvider.release();
+        }
+    }
+
+    /**
+     * Returns the parser pipeline to apply, building a default one if none was supplied.
+     *
+     * @return the parsers, never empty in a correctly configured import
+     * @throws IllegalStateException if neither parsers nor an encoded-value lookup were provided
+     */
+    private OvertureParsers resolveParsers() {
+        if (parsers != null) return parsers;
 
         if (encodedValueLookup == null) {
-            throw new IllegalStateException(
-                    "EncodedValueLookup is not set. Call setEncodedValueLookup() and ensure car_access and car_average_speed are configured.");
+            throw new IllegalStateException("Neither parsers nor an EncodedValueLookup were provided."
+                    + " Construct OvertureReader with OvertureParsers, or call setEncodedValueLookup().");
         }
+        // Deprecated path: assemble from whatever the lookup holds. Ordering still comes from the
+        // registry, so this cannot disagree with the registry-driven path about what runs first.
+        parsers =
+                OvertureParsers.build(new DefaultOvertureImportRegistry(), encodedValueLookup, config);
+        return parsers;
+    }
 
-        BooleanEncodedValue bikeAccessEnc = fillBooleanEncodedValue(VehicleAccess.key("bike"));
-        DecimalEncodedValue bikeSpeedEnc = fillDecimalEncodedValues(VehicleSpeed.key("bike"));
-        BooleanEncodedValue carAccessEnc = fillBooleanEncodedValue(VehicleAccess.key("car"));
-        DecimalEncodedValue carSpeedEnc = fillDecimalEncodedValues(VehicleSpeed.key("car"));
-        BooleanEncodedValue footAccessEnc = fillBooleanEncodedValue(VehicleAccess.key("foot"));
-        DecimalEncodedValue footSpeedEnc = fillDecimalEncodedValues(VehicleSpeed.key("foot"));
-        EnumEncodedValue<Hazmat> hazmatEnc = fillEnumEncodedValues("hazmat", Hazmat.class);
-        BooleanEncodedValue roadClassLinkEnc = fillBooleanEncodedValue("road_class_link");
-        EnumEncodedValue<RoadClass> roadClassEnc = fillEnumEncodedValues("road_class", RoadClass.class);
-        EnumEncodedValue<RoadEnvironment> roadEnvironmentEnc =
-                fillEnumEncodedValues("road_environment", RoadEnvironment.class);
-        EnumEncodedValue<Surface> surfaceEnc = fillEnumEncodedValues("surface", Surface.class);
-        EnumEncodedValue<Smoothness> smoothnessEnc =
-                fillEnumEncodedValues("smoothness", Smoothness.class);
-        EnumEncodedValue<TrackType> trackTypeEnc = fillEnumEncodedValues("track_type", TrackType.class);
-
-        for (OvertureRoadSegment segment : segments) {
-            List<OvertureRoadSegment> subsegments = SegmentSplitter.split(segment);
-            for (OvertureRoadSegment subsegment : subsegments) {
-
-                ///  Skip if segment abandoned or under construction
-                boolean needsSkipping =
-                        subsegment.getProperties().getFlags().stream().anyMatch(OvertureRoadFlags::shouldSkip);
-                if (needsSkipping) {
-                    skippedCount++;
-                    continue;
-                }
-
-                LineString lineString = subsegment.getLineString();
-
-                int numPoints = (lineString != null) ? lineString.getNumPoints() : 0;
-                if (numPoints < 2) {
-                    skippedCount++;
-                    continue;
-                }
-
-                /// Using the coordinate inversion: y=Lat, x=Lon
-                Coordinate startCoord = lineString.getCoordinateN(0);
-                Coordinate endCoord = lineString.getCoordinateN(numPoints - 1);
-                int fromId = getOrCreateNode(startCoord.y, startCoord.x, nodeAccess);
-                int toId = getOrCreateNode(endCoord.y, endCoord.x, nodeAccess);
-                if (fromId == toId) continue;
-
-                PointList fullGeometry = convertToPointList(lineString);
-                PointList intermediatePoints = extractIntermediatePoints(fullGeometry);
-
-                double distance = subsegment.calculateDistance();
-
-                EdgeIteratorState edge =
-                        graph.edge(fromId, toId).setDistance(distance).setWayGeometry(intermediatePoints);
-
-                OvertureBikeAccessParser.parseAccess(edge, subsegment, bikeAccessEnc);
-                OvertureBikeAverageSpeedParser.parseSpeed(edge, subsegment, bikeSpeedEnc);
-                OvertureCarAccessParser.parseAccess(edge, subsegment, carAccessEnc);
-                OvertureCarAverageSpeedParser.parseSpeed(edge, subsegment, carSpeedEnc);
-                OvertureFootAccessParser.parseAccess(edge, subsegment, footAccessEnc);
-                OvertureFootAverageSpeedParser.parseSpeed(edge, subsegment, footSpeedEnc);
-                OvertureHazmatParser.parseHazmat(edge, subsegment, hazmatEnc);
-                OvertureRoadClassLinkParser.parseLink(edge, subsegment, roadClassLinkEnc);
-                OvertureRoadClassParser.parseRoadClass(edge, subsegment, roadClassEnc);
-                OvertureRoadEnvironmentParser.parseRoadEnvironment(edge, subsegment, roadEnvironmentEnc);
-                OvertureRoadSurfaceParser.parseSurface(edge, subsegment, surfaceEnc);
-                OvertureSmoothnessParser.parseSmoothness(edge, subsegment, smoothnessEnc);
-                OvertureTrackTypeParser.parseTrackType(edge, subsegment, trackTypeEnc);
-                OvertureNameParser.parseName(edge, subsegment);
-
-                edgeCount++;
+    /**
+     * Applies the configured elevation and simplification settings to one edge's geometry.
+     *
+     * <p>The order matches {@code OSMReader.addEdge} and is not arbitrary: sampling adds the points that
+     * smoothing then operates on, and simplification runs last so it can drop the points the earlier
+     * two steps decided are redundant. Elevation work is skipped entirely on a 2D graph, where there is
+     * nothing to sample or smooth.
+     *
+     * <p>The returned list is what the parsers see, so {@code average_slope} and {@code max_slope} are
+     * computed from the same geometry the graph stores — again as in the OSM reader, which sets its
+     * {@code point_list} tag after simplification.
+     *
+     * @param pointList the geometry converted from the source, modified in place where possible
+     * @return the geometry to store and to hand to the parsers
+     */
+    private PointList processGeometry(PointList pointList) {
+        if (pointList.is3D()) {
+            // Sampling interpolates points and asks the provider for their elevation, so it needs one.
+            if (config.getLongEdgeSamplingDistance() < Double.MAX_VALUE && elevationProvider != null) {
+                pointList = EdgeSampling.sample(
+                        pointList,
+                        config.getLongEdgeSamplingDistance(),
+                        DistanceCalcEarth.DIST_EARTH,
+                        elevationProvider);
             }
-            if (edgeCount % 50000 == 0) {
-                logger.info("Progress: {} edges created...", edgeCount);
+
+            String smoothing = config.getElevationSmoothing();
+            if (smoothing.equals("ramer")) {
+                EdgeElevationSmoothingRamer.smooth(pointList, config.getElevationSmoothingRamerMax());
+            } else if (smoothing.equals("moving_average")) {
+                EdgeElevationSmoothingMovingAverage.smooth(
+                        pointList, config.getSmoothElevationAverageWindowSize());
+            } else if (!smoothing.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Unsupported elevation smoothing algorithm: '" + smoothing + "'");
             }
         }
-        logger.info("Finished readGraph. Created: {}, Skipped: {}", edgeCount, skippedCount);
+
+        if (config.getMaxWayPointDistance() > 0 && pointList.size() > 2) {
+            simplifyAlgo.simplify(pointList);
+        }
+        return pointList;
     }
 
     /**
@@ -372,9 +526,14 @@ public class OvertureReader implements DataReader {
         if (fullGeometry.size() <= 2) {
             return PointList.EMPTY;
         }
-        PointList intermediate = new PointList(fullGeometry.size() - 2, false);
+        // Must match the source list's dimension, otherwise setWayGeometry rejects it on a 3D graph.
+        PointList intermediate = new PointList(fullGeometry.size() - 2, fullGeometry.is3D());
         for (int i = 1; i < fullGeometry.size() - 1; i++) {
-            intermediate.add(fullGeometry.getLat(i), fullGeometry.getLon(i));
+            if (fullGeometry.is3D()) {
+                intermediate.add(fullGeometry.getLat(i), fullGeometry.getLon(i), fullGeometry.getEle(i));
+            } else {
+                intermediate.add(fullGeometry.getLat(i), fullGeometry.getLon(i));
+            }
         }
         return intermediate;
     }
@@ -426,11 +585,20 @@ public class OvertureReader implements DataReader {
      * </ol>
      * </p>
      *
-     * @return a list of parsed {@link OvertureRoadSegment} objects.
+     * @return the segments to import. Parquet sources return a lazily-read, closeable stream so peak
+     *     memory does not scale with the size of the extract; {@code readGraph} closes it. GeoJSON still
+     *     returns a fully materialised list, because its parser builds a whole-document tree anyway.
      * @throws IOException if no valid data source is configured, the local file is missing, or an error occurs during the parsing process.
      */
-    protected List<OvertureRoadSegment> parseData() throws IOException {
-        if (s3Bucket != null && s3Key != null && s3Client != null) {
+    protected Iterable<OvertureRoadSegment> parseData() throws IOException {
+        if (s3Bucket != null && s3Key != null) {
+            if (s3Client == null) {
+                // Built here rather than when the reader was configured, so that merely assembling an
+                // import never contacts AWS, and a missing region surfaces against the source that
+                // actually needs one. A caller wanting a custom endpoint sets the client itself.
+                logger.info("No S3 client set, creating one from the default AWS configuration");
+                s3Client = S3Client.create();
+            }
             logger.info("Reading from S3 source: s3://{}/{}", s3Bucket, s3Key);
             return parseFromS3();
         }
@@ -454,10 +622,10 @@ public class OvertureReader implements DataReader {
      * GeoJSON is not supported on S3 for performance reasons.
      * </p>
      *
-     * @return list of road segments
+     * @return the road segments, streamed for the large-file path
      * @throws IOException if format is unsupported or network fails
      */
-    private List<OvertureRoadSegment> parseFromS3() throws IOException {
+    private Iterable<OvertureRoadSegment> parseFromS3() throws IOException {
         logger.info("Resolving S3 object: s3://{}/{}", s3Bucket, s3Key);
         FormatDetector.DataFormat format = FormatDetector.detectFromPath(s3Key);
 
@@ -490,7 +658,9 @@ public class OvertureReader implements DataReader {
         } else {
             logger.info("File is large ({} bytes). Using S3 Streaming adapter...", size);
             S3ParquetInputFile s3InputFile = new S3ParquetInputFile(s3Client, s3Bucket, s3Key, size);
-            return OvertureParquetParser.parse(s3InputFile);
+            // Streamed rather than materialised: this is the branch taken for continent-sized extracts,
+            // where accumulating every segment first cannot fit in any heap.
+            return OvertureParquetParser.stream(s3InputFile);
         }
     }
 
@@ -530,41 +700,113 @@ public class OvertureReader implements DataReader {
      * @return list of parsed road segments
      * @throws IOException if the format is unsupported or file access fails
      */
-    private List<OvertureRoadSegment> parseFromLocal() throws IOException {
+    private Iterable<OvertureRoadSegment> parseFromLocal() throws IOException {
         FormatDetector.DataFormat format = FormatDetector.detectFromFile(overtureFile);
 
         return switch (format) {
-            case PARQUET -> OvertureParquetParser.parse(overtureFile);
+                // Streamed: this is the path a large local extract takes.
+            case PARQUET -> OvertureParquetParser.stream(overtureFile);
+                // Not streamed, and not worth pretending otherwise: OvertureParser reads the whole GeoJSON
+                // document into a Jackson tree before any segment is produced, so the tree - not the
+                // segment
+                // list - is what bounds the file size this path can handle.
             case GEOJSON -> OvertureParser.parse(overtureFile);
             default -> throw new IOException("Unsupported local file format: " + overtureFile.getName());
         };
     }
 
     /**
-     * Retrieves an existing node ID or creates a new one for the specified coordinates.
-     * Uses a LongIntScatterMap to ensure road connectivity by deduplicating nodes at intersections.
+     * Returns the connector this sub-segment starts or ends at, if Overture names one there.
      *
+     * <p>{@code SubSegmentProcessor.recalculateAt} rewrites each surviving connector's position into the
+     * sub-segment's own 0..1 space and assigns <em>exactly</em> {@code 0.0} or {@code 1.0} when the
+     * connector coincides with a boundary, so an exact comparison is the intended test rather than a
+     * tolerance. An unsplit segment keeps its original positions, where the same rule holds.
+     *
+     * @param subsegment the sub-segment being imported
+     * @param at {@code 0.0} for its start, {@code 1.0} for its end
+     * @return the connector id, or {@code null} when this boundary came from a property range rather
+     *     than a connector
+     */
+    @Nullable private static String connectorIdAt(OvertureRoadSegment subsegment, double at) {
+        if (subsegment.getProperties() == null) return null;
+        List<OvertureConnector> connectors = subsegment.getProperties().getConnectors();
+        if (connectors == null) return null;
+
+        for (OvertureConnector connector : connectors) {
+            if (connector != null && connector.getAt() == at && connector.getConnectorId() != null) {
+                return connector.getConnectorId();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Retrieves an existing node ID or creates a new one for a sub-segment end point.
+     *
+     * <p>Identity comes from the Overture connector when there is one, and from the rounded coordinate
+     * otherwise. That ordering is the whole point: Overture states topology through connector ids, and
+     * coordinates cannot reproduce it. Measured on a 124k-segment Florence extract, 54,456 of 133,449
+     * junctions - 41% - were shared by two or more segments whose end points did not round to the same
+     * 1e-7 degree key, so they became separate nodes and the road network fell apart there. Only 1.2% of
+     * those gaps were under a centimetre; the rest ranged from decimetres to tens of metres, so no
+     * snapping tolerance could fix it without also merging genuinely distinct junctions.
+     *
+     * <p>The coordinate map is still consulted and still populated, so this only ever merges more than
+     * before, never less: a connector seen for the first time at a coordinate that already has a node
+     * adopts that node rather than adding a second one.
+     *
+     * @param connectorId the Overture connector at this point, or {@code null} if none
      * @param lat The latitude of the node.
      * @param lon The longitude of the node.
      * @param na  The NodeAccess object used to store coordinates in the graph.
      * @return The unique identifier of the node within the graph.
      */
-    private int getOrCreateNode(double lat, double lon, NodeAccess na) {
+    private int getOrCreateNode(@Nullable String connectorId, double lat, double lon, NodeAccess na) {
         int latFixed = (int) Math.round(lat * 1e7);
         int lonFixed = (int) Math.round(lon * 1e7);
 
         // key contains lat in the first 32 bits and lon in the other 32 bits
         long key = ((long) latFixed << 32) | (lonFixed & 0xFFFFFFFFL);
 
+        if (connectorId != null) {
+            int byConnector = connectorNodeMap.get(connectorId);
+            if (byConnector != ConnectorNodeMap.NOT_FOUND) return byConnector;
+        }
         if (nodeMap.containsKey(key)) {
-            return nodeMap.get(key);
+            int existing = nodeMap.get(key);
+            // Bind the connector to the node that is already here, so a later sub-segment arriving at
+            // the same connector from different geometry still lands on it.
+            if (connectorId != null) connectorNodeMap.put(connectorId, existing);
+            return existing;
         }
 
         int newNodeId = graph.getNodes();
-        na.setNode(newNodeId, lat, lon);
+        if (na.is3D()) {
+            na.setNode(newNodeId, lat, lon, elevationAt(lat, lon));
+        } else {
+            na.setNode(newNodeId, lat, lon);
+        }
         nodeMap.put(key, newNodeId);
+        if (connectorId != null) connectorNodeMap.put(connectorId, newNodeId);
 
         return newNodeId;
+    }
+
+    /**
+     * Samples the configured elevation provider.
+     *
+     * @param lat latitude of the point
+     * @param lon longitude of the point
+     * @return elevation in meters, or the configured {@code defaultElevation} when no provider is
+     *     configured or it has no data for the point. A provider returning {@link Double#NaN} means
+     *     "unknown"; storing NaN would poison every downstream slope and 3D distance computation, and
+     *     substituting the configured default is what the OSM reader does with the same value.
+     */
+    private double elevationAt(double lat, double lon) {
+        if (elevationProvider == null) return config.getDefaultElevation();
+        double ele = elevationProvider.getEle(lat, lon);
+        return Double.isNaN(ele) ? config.getDefaultElevation() : ele;
     }
 
     /**
@@ -572,69 +814,78 @@ public class OvertureReader implements DataReader {
      * Performs coordinate inversion to match GraphHopper's internal standard:
      * JTS (x=lon, y=lat) -> GraphHopper (lat, lon).
      *
+     * <p>The result matches the graph's dimension. It used to be hard-coded to 2D, which made any
+     * import with {@code graph.elevation.provider} configured fail in {@code BaseGraph} with
+     * "Cannot use pointlist which is 2D for graph which is 3D".
+     *
      * @param linestring The segment geometry in JTS format (Longitude/Latitude).
-     * @return A list of points in GraphHopper format (Latitude/Longitude).
+     * @return A list of points in GraphHopper format (Latitude/Longitude), 3D when the graph is 3D.
      */
     private PointList convertToPointList(LineString linestring) {
-        PointList pointList = new PointList(linestring.getNumPoints(), false);
+        boolean is3D = graph.getNodeAccess().is3D();
+        PointList pointList = new PointList(linestring.getNumPoints(), is3D);
         for (int i = 0; i < linestring.getNumPoints(); i++) {
             Coordinate coord = linestring.getCoordinateN(i);
-            pointList.add(coord.getY(), coord.getX());
+            double lat = coord.getY();
+            double lon = coord.getX();
+            if (is3D) {
+                // Overture geometry carries no elevation, so sample it like the OSM reader does.
+                pointList.add(lat, lon, elevationAt(lat, lon));
+            } else {
+                pointList.add(lat, lon);
+            }
         }
         return pointList;
     }
 
     /**
-     * Retrieves a {@link BooleanEncodedValue} by its key.
-     * Logs a warning and returns {@code null} if the key is not found.
+     * Retrieves a {@link BooleanEncodedValue} by its key, recording the key as missing rather than
+     * throwing so the caller can report every missing value at once.
      *
      * @param key the unique identifier for the boolean encoded value
-     * @return the retrieved {@link BooleanEncodedValue}, or {@code null} if unavailable
+     * @param missing collects keys that are not configured
+     * @return the encoded value, or {@code null} if it is not configured
      */
-    private BooleanEncodedValue fillBooleanEncodedValue(String key) {
-        BooleanEncodedValue booleanEncodedValue = null;
-        try {
-            booleanEncodedValue = encodedValueLookup.getBooleanEncodedValue(key);
-        } catch (Exception e) {
-            logger.warn(key + " not available: " + e.getMessage());
+    private BooleanEncodedValue requireBoolean(String key, List<String> missing) {
+        if (!encodedValueLookup.hasEncodedValue(key)) {
+            missing.add(key);
+            return null;
         }
-        return booleanEncodedValue;
+        return encodedValueLookup.getBooleanEncodedValue(key);
     }
 
     /**
-     * Retrieves a {@link DecimalEncodedValue} by its key.
-     * Logs a warning and returns {@code null} if the key is not found.
+     * Retrieves a {@link DecimalEncodedValue} by its key, recording the key as missing rather than
+     * throwing so the caller can report every missing value at once.
      *
-     * @param key the unique identifier for the boolean encoded value
-     * @return the retrieved {@link DecimalEncodedValue}, or {@code null} if unavailable
+     * @param key the unique identifier for the decimal encoded value
+     * @param missing collects keys that are not configured
+     * @return the encoded value, or {@code null} if it is not configured
      */
-    private DecimalEncodedValue fillDecimalEncodedValues(String key) {
-        DecimalEncodedValue decimalEncodedValue = null;
-        try {
-            decimalEncodedValue = encodedValueLookup.getDecimalEncodedValue(key);
-        } catch (Exception e) {
-            logger.warn(key + " not available: " + e.getMessage());
+    private DecimalEncodedValue requireDecimal(String key, List<String> missing) {
+        if (!encodedValueLookup.hasEncodedValue(key)) {
+            missing.add(key);
+            return null;
         }
-        return decimalEncodedValue;
+        return encodedValueLookup.getDecimalEncodedValue(key);
     }
 
     /**
-     * Retrieves a {@link EnumEncodedValue} by its key.
-     * Logs a warning and returns {@code null} if the key is not found.
+     * Retrieves an {@link EnumEncodedValue} by its key, recording the key as missing rather than
+     * throwing so the caller can report every missing value at once.
      *
-     * @param <T>       the Enum type
-     * @param key       the unique identifier for the enum encoded value
+     * @param <T> the Enum type
+     * @param key the unique identifier for the enum encoded value
      * @param enumClass the class of the enumeration
-     * @return the retrieved {@link EnumEncodedValue}, or {@code null} if unavailable
+     * @param missing collects keys that are not configured
+     * @return the encoded value, or {@code null} if it is not configured
      */
-    private <T extends Enum<T>> EnumEncodedValue<T> fillEnumEncodedValues(
-            String key, Class<T> enumClass) {
-        EnumEncodedValue<T> enumEncodedValue = null;
-        try {
-            enumEncodedValue = encodedValueLookup.getEnumEncodedValue(key, enumClass);
-        } catch (Exception e) {
-            logger.warn(key + " not available: " + e.getMessage());
+    private <T extends Enum<T>> EnumEncodedValue<T> requireEnum(
+            String key, Class<T> enumClass, List<String> missing) {
+        if (!encodedValueLookup.hasEncodedValue(key)) {
+            missing.add(key);
+            return null;
         }
-        return enumEncodedValue;
+        return encodedValueLookup.getEnumEncodedValue(key, enumClass);
     }
 }

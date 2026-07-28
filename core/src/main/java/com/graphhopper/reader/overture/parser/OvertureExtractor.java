@@ -1,5 +1,7 @@
 package com.graphhopper.reader.overture.parser;
 
+import static java.util.Collections.emptyList;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.graphhopper.reader.overture.parser.features.SegmentFeature;
 import com.graphhopper.reader.overture.parser.field.extractors.*;
@@ -10,8 +12,6 @@ import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
 import com.graphhopper.reader.overture.road.segment.OvertureSegmentSubtype;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.util.Collections.emptyList;
 
 /**
  * Orchestrates the conversion of Overture GeoJSON features into {@link OvertureRoadSegment} objects.
@@ -114,55 +114,13 @@ public class OvertureExtractor {
                                 NamesExtractor.extractNames(featureJson, featureId),
                                 OvertureSegmentSubtype.WATER));
 
-            case RAIL: {
-                // For rail we require class but do not populate other road-specific fields
-                var roadClass = RoadClassExtractor.extractRoadClass(featureJson, featureId);
-                if (roadClass == null) {
-                    logger.warn(
-                            "Skipping feature id: {} due to missing class for rail subtype.",
-                            SegmentFeature.ID.getFeature(featureJson, "ID") != null
-                                    ? SegmentFeature.ID.getFeature(featureJson, "ID").asText()
-                                    : "unknown");
-                    return null;
-                }
-                if (!OvertureParserFilter.INSTANCE.getRoadClassFilter().isAllowed(roadClass)) {
-                    logger.info(
-                            "Skipping segment with id: {} due to filtering of road class: {}.",
-                            SegmentFeature.ID.getFeature(featureJson, "ID") != null
-                                    ? SegmentFeature.ID.getFeature(featureJson, "ID").asText()
-                                    : "unknown",
-                            roadClass);
-                    return null;
-                }
-
-                // Build minimal properties for rail: class required; several road-specific fields must be
-                // null or emptyList().
-                return new OvertureRoadSegment(
-                        IdExtractor.extractId(featureJson),
-                        LineStringExtractor.extractLineString(featureJson, featureId),
-                        new OvertureRoadProperties(
-                                ConnectorExtractor.extractConnectors(featureJson), // connectors allowed
-                                RouteExtractor.extractRoutes(featureJson), // routes allowed
-                                roadClass, // class required for rail
-                                emptyList(), // destinations must be null
-                                emptyList(), // prohibitedTransitions must be null
-                                emptyList(), // surfaces must be null
-                                emptyList(), // flags must be null
-                                emptyList(), // speedLimits must be null
-                                emptyList(), // widthRules must be null
-                                null, // subclass must be null
-                                emptyList(), // subclassRules must be null
-                                AccessRestrictionExtractor.extractAccessRestrictions(
-                                        featureJson, featureId), // accessRestrictions allowed
-                                LevelExtractor.extractLevel(featureJson),
-                                LevelRulesExtractor.extractLevelRules(featureJson),
-                                ThemeExtractor.extractTheme(featureJson),
-                                FeatureTypeExtractor.extractFeatureType(featureJson),
-                                VersionExtractor.extractVersion(featureJson),
-                                SourceExtractor.extractSources(featureJson),
-                                NamesExtractor.extractNames(featureJson, featureId),
-                                OvertureSegmentSubtype.RAIL));
-            }
+            case RAIL:
+                // Not routable by any profile this reader supports, and rail carries no access
+                // restrictions, so importing one yields a road open to every mode. This used to build a
+                // segment whenever the class survived the filter, which let class=unknown rail through.
+                // See the matching check in OvertureParquetParser.tryMapRecord.
+                logger.debug("Skipping rail segment with id: {}", featureId);
+                return null;
 
             case ROAD:
             default: {

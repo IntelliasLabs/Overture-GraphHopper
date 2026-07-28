@@ -1,8 +1,8 @@
 package com.graphhopper.reader.overture.access.restriction.scope.containers;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link VehicleAttributes} verifying constructor behavior, helper methods and
@@ -16,11 +16,7 @@ class VehicleAttributesTest {
     @Test
     void constructorStoresFieldsAndGettersReturnThem() {
         VehicleAttributes attrs = new VehicleAttributes(
-                DimensionRestriction.HEIGHT,
-                ComparisonOperator.LESS_THAN,
-                3.5,
-                Units.M
-        );
+                DimensionRestriction.HEIGHT, ComparisonOperator.LESS_THAN, 3.5, Units.M);
 
         assertEquals(DimensionRestriction.HEIGHT, attrs.getDimension());
         assertEquals(ComparisonOperator.LESS_THAN, attrs.getComparison());
@@ -33,12 +29,7 @@ class VehicleAttributesTest {
      */
     @Test
     void hasMethodsReflectPresenceOfValues() {
-        VehicleAttributes attrs = new VehicleAttributes(
-                DimensionRestriction.HEIGHT,
-                null,
-                null,
-                null
-        );
+        VehicleAttributes attrs = new VehicleAttributes(DimensionRestriction.HEIGHT, null, null, null);
 
         assertTrue(attrs.hasDimensionRestriction());
         assertFalse(attrs.hasComparisonOperator());
@@ -52,9 +43,12 @@ class VehicleAttributesTest {
      */
     @Test
     void equalsAndHashCodeUseAllFields() {
-        VehicleAttributes a1 = new VehicleAttributes(DimensionRestriction.WEIGHT, ComparisonOperator.GREATER_THAN, 12_000.0, null);
-        VehicleAttributes a2 = new VehicleAttributes(DimensionRestriction.WEIGHT, ComparisonOperator.GREATER_THAN, 12_000.0, null);
-        VehicleAttributes a3 = new VehicleAttributes(DimensionRestriction.WEIGHT, ComparisonOperator.GREATER_THAN, 13_000.0, null);
+        VehicleAttributes a1 = new VehicleAttributes(
+                DimensionRestriction.WEIGHT, ComparisonOperator.GREATER_THAN, 12_000.0, null);
+        VehicleAttributes a2 = new VehicleAttributes(
+                DimensionRestriction.WEIGHT, ComparisonOperator.GREATER_THAN, 12_000.0, null);
+        VehicleAttributes a3 = new VehicleAttributes(
+                DimensionRestriction.WEIGHT, ComparisonOperator.GREATER_THAN, 13_000.0, null);
 
         assertEquals(a1, a2);
         assertEquals(a1.hashCode(), a2.hashCode());
@@ -66,7 +60,8 @@ class VehicleAttributesTest {
      */
     @Test
     void toStringContainsKeyFields() {
-        VehicleAttributes attrs = new VehicleAttributes(DimensionRestriction.LENGTH, ComparisonOperator.LESS_THAN_EQUAL, 10.0, Units.M);
+        VehicleAttributes attrs = new VehicleAttributes(
+                DimensionRestriction.LENGTH, ComparisonOperator.LESS_THAN_EQUAL, 10.0, Units.M);
         String s = attrs.toString();
         assertTrue(s.contains("dimension="));
         assertTrue(s.contains("comparison=less_than_equal"));
@@ -97,7 +92,8 @@ class VehicleAttributesTest {
      */
     @Test
     void ofComparisonOperatorCreatesAttributesWithOnlyComparisonSet() {
-        VehicleAttributes attrs = VehicleAttributes.ofComparisonOperator(ComparisonOperator.GREATER_THAN);
+        VehicleAttributes attrs =
+                VehicleAttributes.ofComparisonOperator(ComparisonOperator.GREATER_THAN);
 
         assertNull(attrs.getDimension());
         assertEquals(ComparisonOperator.GREATER_THAN, attrs.getComparison());

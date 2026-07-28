@@ -14,7 +14,7 @@ import com.graphhopper.util.PointList;
 import com.graphhopper.util.TranslationMap;
 import com.graphhopper.util.shapes.GHPoint;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -32,7 +32,7 @@ public class NavigateResponseConverterTest {
     private static final String graphFolder = "target/graphhopper-test-car";
     private static final String osmFile = "../core/files/andorra.osm.gz";
     private static GraphHopper hopper;
-    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
     private static final String profile = "my_car";
     private final TranslationMap trMap = hopper.getTranslationMap();
     private final DistanceConfig distanceConfig = new DistanceConfig(DistanceUtils.Unit.METRIC, trMap, Locale.ENGLISH,

@@ -3,6 +3,9 @@ package com.graphhopper.reader.overture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.graphhopper.reader.DataReaderConfig;
+import com.graphhopper.reader.overture.parsers.DefaultOvertureImportRegistry;
+import com.graphhopper.reader.overture.parsers.OvertureParsers;
 import com.graphhopper.reader.overture.road.flags.OvertureRoadFlags;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadProperties;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
@@ -33,21 +36,7 @@ public class OvertureReaderReadGraphTest {
     private static final double STANDARD_SEGMENT_DISTANCE = 15_000.0;
 
     private EncodingManager createEncodingManager() {
-        return new EncodingManager.Builder()
-                .add(new SimpleBooleanEncodedValue("car_access", true))
-                .add(new SimpleBooleanEncodedValue("bike_access", true))
-                .add(new SimpleBooleanEncodedValue("foot_access", true))
-                .add(new DecimalEncodedValueImpl("car_average_speed", 7, 2, true))
-                .add(new DecimalEncodedValueImpl("bike_average_speed", 4, 2, true))
-                .add(new DecimalEncodedValueImpl("foot_average_speed", 4, 1, true))
-                .add(new EnumEncodedValue<>("road_class", RoadClass.class))
-                .add(new SimpleBooleanEncodedValue("road_class_link", true))
-                .add(new EnumEncodedValue<>("surface", Surface.class))
-                .add(new EnumEncodedValue<>("smoothness", Smoothness.class))
-                .add(new EnumEncodedValue<>("track_type", TrackType.class))
-                .add(new EnumEncodedValue<>("road_environment", RoadEnvironment.class))
-                .add(new EnumEncodedValue<>("hazmat", Hazmat.class))
-                .build();
+        return OvertureTestFixtures.minimalEncodingManager();
     }
 
     @ParameterizedTest
@@ -235,10 +224,13 @@ public class OvertureReaderReadGraphTest {
         reader.setEncodedValueLookup(em);
 
         GeometryFactory gf = new GeometryFactory();
+        // Deliberately not a straight line: geometry simplification is on by default, and collinear
+        // intermediate points carry no information, so a straight fixture would legitimately end up
+        // with no pillar nodes at all. See testReadGraph_simplifiesRedundantGeometry.
         LineString line = gf.createLineString(new Coordinate[] {
             new Coordinate(30.0, 50.0),
-            new Coordinate(30.05, 50.05),
-            new Coordinate(30.1, 50.1),
+            new Coordinate(30.05, 50.1),
+            new Coordinate(30.1, 50.05),
             new Coordinate(30.15, 50.15)
         });
 
@@ -255,10 +247,46 @@ public class OvertureReaderReadGraphTest {
         PointList wayGeometry = edge.fetchWayGeometry(FetchMode.PILLAR_ONLY);
         assertEquals(2, wayGeometry.size());
 
-        assertEquals(50.05, wayGeometry.getLat(0), DELTA);
+        assertEquals(50.1, wayGeometry.getLat(0), DELTA);
         assertEquals(30.05, wayGeometry.getLon(0), DELTA);
-        assertEquals(50.1, wayGeometry.getLat(1), DELTA);
+        assertEquals(50.05, wayGeometry.getLat(1), DELTA);
         assertEquals(30.1, wayGeometry.getLon(1), DELTA);
+    }
+
+    @Test
+    @DisplayName("Should drop redundant geometry points, and keep them when simplification is off")
+    public void testReadGraph_simplifiesRedundantGeometry() throws IOException {
+        // Two intermediate points exactly on the line between the endpoints. Storing them costs space
+        // and describes nothing, which is what datareader.max_way_point_distance exists to avoid — a
+        // setting an Overture import used to ignore entirely.
+        Coordinate[] straightLine = new Coordinate[] {
+            new Coordinate(30.0, 50.0),
+            new Coordinate(30.05, 50.05),
+            new Coordinate(30.1, 50.1),
+            new Coordinate(30.15, 50.15)
+        };
+
+        assertEquals(0, pillarCountFor(straightLine, new DataReaderConfig()));
+        assertEquals(2, pillarCountFor(straightLine, new DataReaderConfig().setMaxWayPointDistance(0)));
+    }
+
+    /** Imports one segment with the given geometry and settings, and returns its pillar-node count. */
+    private int pillarCountFor(Coordinate[] coordinates, DataReaderConfig config) throws IOException {
+        EncodingManager em = createEncodingManager();
+        BaseGraph graph = new BaseGraph.Builder(em).create();
+        OvertureReader reader = spy(new OvertureReader(
+                graph, OvertureParsers.build(new DefaultOvertureImportRegistry(), em), config));
+
+        LineString line = new GeometryFactory().createLineString(coordinates);
+        OvertureRoadSegment segment = createSegmentWithFlags(line, Collections.emptyList());
+        when(segment.calculateDistance()).thenReturn(45000.0);
+        doReturn(Collections.singletonList(segment)).when(reader).parseData();
+        reader.readGraph();
+
+        return graph
+                .getEdgeIteratorState(0, 1)
+                .fetchWayGeometry(FetchMode.PILLAR_ONLY)
+                .size();
     }
 
     @Test

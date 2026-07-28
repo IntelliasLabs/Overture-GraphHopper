@@ -21,6 +21,7 @@ import com.carrotsearch.hppc.BitSet;
 import com.carrotsearch.hppc.LongArrayList;
 import com.graphhopper.coll.GHLongLongHashMap;
 import com.graphhopper.reader.DataReader;
+import com.graphhopper.reader.DataReaderConfig;
 import com.graphhopper.reader.ReaderRelation;
 import com.graphhopper.reader.ReaderElement;
 import com.graphhopper.reader.ReaderNode;
@@ -76,7 +77,7 @@ public class OSMReader implements DataReader {
 
     private static final Pattern WAY_NAME_PATTERN = Pattern.compile("; *");
 
-    private final OSMReaderConfig config;
+    private final DataReaderConfig config;
     private final BaseGraph baseGraph;
     private final EdgeIntAccess edgeIntAccess;
     private final NodeAccess nodeAccess;
@@ -97,7 +98,7 @@ public class OSMReader implements DataReader {
     private WayToEdgesMap restrictedWaysToEdgesMap = new WayToEdgesMap();
     private List<ReaderRelation> restrictionRelations = new ArrayList<>();
 
-    public OSMReader(BaseGraph baseGraph, OSMParsers osmParsers, OSMReaderConfig config) {
+    public OSMReader(BaseGraph baseGraph, OSMParsers osmParsers, DataReaderConfig config) {
         this.baseGraph = baseGraph;
         this.edgeIntAccess = baseGraph.getEdgeAccess();
         this.config = config;
@@ -118,7 +119,6 @@ public class OSMReader implements DataReader {
     /**
      * Sets the OSM file to be read.  Supported formats include .osm.xml, .osm.gz and .xml.pbf
      */
-    @Override
     public OSMReader setFile(File osmFile) {
         this.osmFile = osmFile;
         return this;

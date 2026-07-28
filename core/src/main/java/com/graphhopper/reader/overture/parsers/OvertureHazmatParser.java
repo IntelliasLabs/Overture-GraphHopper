@@ -14,9 +14,16 @@ import java.util.List;
  * potential for catastrophic accidents in enclosed spaces.
  * </p>
  */
-public final class OvertureHazmatParser {
+public final class OvertureHazmatParser implements OvertureTagParser {
 
-    private OvertureHazmatParser() {}
+    private final EnumEncodedValue<Hazmat> hazmatEnc;
+
+    /**
+     * @param hazmatEnc the encoded value representing hazmat restrictions
+     */
+    public OvertureHazmatParser(EnumEncodedValue<Hazmat> hazmatEnc) {
+        this.hazmatEnc = hazmatEnc;
+    }
 
     /**
      * Checks if the provided road segment has hazmat restrictions.
@@ -45,12 +52,13 @@ public final class OvertureHazmatParser {
     /**
      * Determines and applies restrictions for the transport of hazardous materials.
      *
-     * @param edge      the graph edge to update
-     * @param segment   the Overture road segment
-     * @param hazmatEnc the encoded value representing hazmat restrictions
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; hazmat status comes entirely from the segment
      */
-    public static void parseHazmat(
-            EdgeIteratorState edge, OvertureRoadSegment segment, EnumEncodedValue<Hazmat> hazmatEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         Hazmat hazmat = hasHazmatRestriction(segment) ? Hazmat.YES : Hazmat.NO;
         edge.set(hazmatEnc, hazmat);
     }

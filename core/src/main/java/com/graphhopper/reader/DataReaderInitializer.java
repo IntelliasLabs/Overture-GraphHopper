@@ -1,9 +1,5 @@
 package com.graphhopper.reader;
 
-import com.graphhopper.routing.OSMReaderConfig;
-import com.graphhopper.routing.util.OSMParsers;
-import com.graphhopper.storage.BaseGraph;
-
 /**
  * Common functional interface for initializing all data readers,
  * in class {@link com.graphhopper.GraphHopper}.
@@ -11,13 +7,15 @@ import com.graphhopper.storage.BaseGraph;
 @FunctionalInterface
 public interface DataReaderInitializer {
     /**
-     * Returns an initialized instance of {@link DataReader} using
-     * the provided values.
+     * Returns an initialized instance of {@link DataReader} for the given import.
      *
-     * @param baseGraph graph
-     * @param osmParsers parsers
-     * @param config config
+     * <p>The context carries only what every source needs. A reader requiring more narrows it to its
+     * own sub-interface — see {@code OsmSupport#create} — so that no source's types appear in this
+     * signature. It previously took {@code OSMParsers} and {@code OSMReaderConfig}, which readers of
+     * other sources were handed and had to ignore.
+     *
+     * @param context the graph and encoded values for this import
      * @return initialized {@link DataReader} instance
      */
-    DataReader initializeDataReader(BaseGraph baseGraph, OSMParsers osmParsers, OSMReaderConfig config);
+    DataReader initializeDataReader(DataReaderContext context);
 }

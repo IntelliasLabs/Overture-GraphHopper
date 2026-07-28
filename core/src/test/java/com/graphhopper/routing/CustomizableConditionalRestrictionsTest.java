@@ -10,7 +10,7 @@ import com.graphhopper.util.CustomModel;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.details.PathDetail;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ public class CustomizableConditionalRestrictionsTest {
 
     private static final String GH_LOCATION = "target/routing-conditional-access-gh";
 
-    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static final DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     @BeforeEach
     @AfterEach

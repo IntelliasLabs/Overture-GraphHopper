@@ -41,7 +41,7 @@ local/
 local.properties
 **/node_modules
 .DS_Store
-/graph-cache
+/graph-cache*
 package-lock.json
 .vscode/
 .claude/

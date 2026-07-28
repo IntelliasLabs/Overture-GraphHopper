@@ -1,14 +1,13 @@
 package com.graphhopper.reader.overture.access.restriction;
 
-import com.graphhopper.reader.overture.access.restriction.scope.containers.*;
-import org.junit.jupiter.api.Test;
+import static java.util.Collections.emptyList;
+import static org.junit.jupiter.api.Assertions.*;
 
+import com.graphhopper.reader.overture.access.restriction.scope.containers.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static java.util.Collections.emptyList;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link PropertyScopeContainer} covering constructor behavior, field accessors,
@@ -25,14 +24,11 @@ class PropertyScopeContainerTest {
         ArrayList<TravelMode> modes = new ArrayList<>();
         modes.add(TravelMode.CAR);
         ArrayList<VehicleAttributes> vehicles = new ArrayList<>();
-        vehicles.add(new VehicleAttributes(DimensionRestriction.HEIGHT, ComparisonOperator.LESS_THAN, 3.5, Units.M));
+        vehicles.add(new VehicleAttributes(
+                DimensionRestriction.HEIGHT, ComparisonOperator.LESS_THAN, 3.5, Units.M));
 
-        PropertyScopeContainer rules = new PropertyScopeContainer("10:00-18:00",
-                TravelHeading.FORWARD,
-                reasons,
-                recognized,
-                modes,
-                vehicles);
+        PropertyScopeContainer rules = new PropertyScopeContainer(
+                "10:00-18:00", TravelHeading.FORWARD, reasons, recognized, modes, vehicles);
 
         assertEquals("10:00-18:00", rules.getDuring());
         assertEquals(TravelHeading.FORWARD, rules.getHeading());
@@ -57,12 +53,8 @@ class PropertyScopeContainerTest {
         modes.add(TravelMode.BUS);
         List<VehicleAttributes> vehicles = emptyList();
 
-        PropertyScopeContainer rules = new PropertyScopeContainer(null,
-                null,
-                reasons,
-                recognized,
-                modes,
-                vehicles);
+        PropertyScopeContainer rules =
+                new PropertyScopeContainer(null, null, reasons, recognized, modes, vehicles);
 
         assertFalse(rules.hasDuring());
         assertFalse(rules.hasHeading());
@@ -93,7 +85,8 @@ class PropertyScopeContainerTest {
         ArrayList<TravelMode> modes = new ArrayList<>();
         modes.add(TravelMode.CAR);
 
-        PropertyScopeContainer withHeadingOnly = new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD);
+        PropertyScopeContainer withHeadingOnly =
+                new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD);
         assertEquals("10:00-18:00", withHeadingOnly.getDuring());
         assertEquals(TravelHeading.FORWARD, withHeadingOnly.getHeading());
         assertFalse(withHeadingOnly.hasUsing());
@@ -101,15 +94,20 @@ class PropertyScopeContainerTest {
         assertFalse(withHeadingOnly.hasMode());
         assertFalse(withHeadingOnly.hasVehicle());
 
-        PropertyScopeContainer withHeadingAndReasons = new PropertyScopeContainer("10:00-18:00", TravelHeading.BACKWARD, reasons);
-        assertEquals(Collections.singletonList(TravelReason.AT_DESTINATION), withHeadingAndReasons.getUsing());
+        PropertyScopeContainer withHeadingAndReasons =
+                new PropertyScopeContainer("10:00-18:00", TravelHeading.BACKWARD, reasons);
+        assertEquals(
+                Collections.singletonList(TravelReason.AT_DESTINATION), withHeadingAndReasons.getUsing());
         assertTrue(withHeadingAndReasons.hasUsing());
 
-        PropertyScopeContainer withRecognized = new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD, reasons, recognized);
-        assertEquals(Collections.singletonList(RecognizedStatus.AS_EMPLOYEE), withRecognized.getRecognized());
+        PropertyScopeContainer withRecognized =
+                new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD, reasons, recognized);
+        assertEquals(
+                Collections.singletonList(RecognizedStatus.AS_EMPLOYEE), withRecognized.getRecognized());
         assertTrue(withRecognized.hasRecognized());
 
-        PropertyScopeContainer withMode = new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD, reasons, recognized, modes);
+        PropertyScopeContainer withMode = new PropertyScopeContainer(
+                "10:00-18:00", TravelHeading.FORWARD, reasons, recognized, modes);
         assertEquals(Collections.singletonList(TravelMode.CAR), withMode.getMode());
         assertTrue(withMode.hasMode());
     }
@@ -123,15 +121,19 @@ class PropertyScopeContainerTest {
         ArrayList<TravelMode> modes = new ArrayList<>();
         modes.add(TravelMode.CAR);
         ArrayList<VehicleAttributes> vehicles = new ArrayList<>();
-        vehicles.add(new VehicleAttributes(DimensionRestriction.WEIGHT, ComparisonOperator.LESS_THAN_EQUAL, 7_500.0, null));
+        vehicles.add(new VehicleAttributes(
+                DimensionRestriction.WEIGHT, ComparisonOperator.LESS_THAN_EQUAL, 7_500.0, null));
 
-        PropertyScopeContainer r1 = new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD, reasons, recognized, modes, vehicles);
-        PropertyScopeContainer r2 = new PropertyScopeContainer("10:00-18:00", TravelHeading.FORWARD, reasons, recognized, modes, vehicles);
+        PropertyScopeContainer r1 = new PropertyScopeContainer(
+                "10:00-18:00", TravelHeading.FORWARD, reasons, recognized, modes, vehicles);
+        PropertyScopeContainer r2 = new PropertyScopeContainer(
+                "10:00-18:00", TravelHeading.FORWARD, reasons, recognized, modes, vehicles);
 
         assertEquals(r1, r2);
         assertEquals(r1.hashCode(), r2.hashCode());
 
-        PropertyScopeContainer r3 = new PropertyScopeContainer("11:00-19:00", TravelHeading.FORWARD, reasons, recognized, modes, vehicles);
+        PropertyScopeContainer r3 = new PropertyScopeContainer(
+                "11:00-19:00", TravelHeading.FORWARD, reasons, recognized, modes, vehicles);
         assertNotEquals(r1, r3);
     }
 
@@ -230,11 +232,7 @@ class PropertyScopeContainerTest {
     @Test
     void ofVehicleCreatesContainerWithOnlyVehicleSet() {
         VehicleAttributes vehicleAttributes = new VehicleAttributes(
-                DimensionRestriction.HEIGHT,
-                ComparisonOperator.LESS_THAN,
-                3.5,
-                Units.M
-        );
+                DimensionRestriction.HEIGHT, ComparisonOperator.LESS_THAN, 3.5, Units.M);
         ArrayList<VehicleAttributes> vehicles = new ArrayList<>();
         vehicles.add(vehicleAttributes);
 

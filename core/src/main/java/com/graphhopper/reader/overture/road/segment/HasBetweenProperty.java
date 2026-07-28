@@ -8,5 +8,4 @@ import com.graphhopper.reader.overture.LinearlyReferencedRange;
 public interface HasBetweenProperty {
 
     LinearlyReferencedRange getBetween();
-
 }

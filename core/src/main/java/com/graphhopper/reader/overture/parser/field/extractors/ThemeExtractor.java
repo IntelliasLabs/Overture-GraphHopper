@@ -1,6 +1,7 @@
 package com.graphhopper.reader.overture.parser.field.extractors;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.graphhopper.reader.overture.parser.features.SegmentFeature;
 import com.graphhopper.reader.overture.road.segment.OvertureTheme;
 
 /**
@@ -16,7 +17,7 @@ public class ThemeExtractor {
      * @return the {@link OvertureTheme}, or {@code null} if missing or invalid
      */
     public static OvertureTheme extractTheme(JsonNode segmentJson) {
-        return null;
+        return OvertureTheme.fromString(SegmentFeature.THEME.parseString(segmentJson, null));
     }
     /**
      * Checks for the presence of the {@code theme} property.
@@ -24,6 +25,7 @@ public class ThemeExtractor {
      * @return {@code true} if the property exists and is not null
      */
     public static boolean themeExists(JsonNode segmentJson) {
-        return true;
+        JsonNode node = SegmentFeature.THEME.getFeature(segmentJson, null);
+        return node != null && !node.isNull();
     }
 }

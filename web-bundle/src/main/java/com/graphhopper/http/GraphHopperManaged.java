@@ -21,6 +21,8 @@ package com.graphhopper.http;
 import com.graphhopper.GraphHopper;
 import com.graphhopper.GraphHopperConfig;
 import com.graphhopper.gtfs.GraphHopperGtfs;
+import com.graphhopper.reader.osm.OsmSupport;
+import com.graphhopper.reader.overture.OvertureSupport;
 import io.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,34 +41,19 @@ public class GraphHopperManaged implements Managed {
 
         String dataReaderFile = configuration.getString("datareader.file", "");
 
-        graphHopper.setDataReaderInitializer((graph, parsers, readerConfig) -> {
-            if (dataReaderFile.startsWith("s3://")
-                    || dataReaderFile.endsWith(".parquet")
-                    || dataReaderFile.endsWith(".geojson")) {
-
-                logger.info(
-                        "Recognized Overture source (S3/Parquet/JSON): {}, using OvertureReader",
-                        dataReaderFile);
-
-                com.graphhopper.reader.overture.OvertureReader reader =
-                        new com.graphhopper.reader.overture.OvertureReader(graph);
-
-                reader.setEncodedValueLookup(graphHopper.getEncodingManager());
-
-                return reader;
-            } else if (dataReaderFile.endsWith(".pbf")
-                    || dataReaderFile.endsWith(".osm")
-                    || dataReaderFile.endsWith(".xml")
-                    || dataReaderFile.endsWith(".bz2")) {
-
-                logger.info("Using standard OSMReader for source: {}", dataReaderFile);
-                return new com.graphhopper.reader.osm.OSMReader(graph, parsers, readerConfig);
-
-            } else {
-                throw new IllegalArgumentException("Unsupported data format for file: " + dataReaderFile
-                        + ". Supported formats: .pbf, .osm, .parquet, .geojson or s3:// paths.");
-            }
-        });
+        if (dataReaderFile.isEmpty()) {
+            // Nothing to read: a GTFS-only setup, where GraphHopperGtfs builds the graph from the feed.
+            logger.info("No datareader.file configured, importing without road data");
+        } else if (OvertureSupport.handles(dataReaderFile)) {
+            logger.info("Recognized Overture source: {}, using OvertureReader", dataReaderFile);
+            graphHopper.setDataReaderInitializer(OvertureSupport.configure(graphHopper));
+        } else if (OsmSupport.handles(dataReaderFile)) {
+            logger.info("Using standard OSMReader for source: {}", dataReaderFile);
+            graphHopper.setDataReaderInitializer(OsmSupport::create);
+        } else {
+            throw new IllegalArgumentException("Unsupported data format for file: " + dataReaderFile
+                    + ". Supported formats: .pbf, .osm, .parquet, .geojson or s3:// paths.");
+        }
 
         graphHopper.init(configuration);
     }

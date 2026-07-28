@@ -1,9 +1,9 @@
 package com.graphhopper.reader.overture.road.segment;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class OvertureRouteTest {
 
@@ -63,15 +63,18 @@ class OvertureRouteTest {
 
     @Test
     void testNotEqualsDifferentRange() {
-        OvertureRoute r1 = new OvertureRoute("Name", "Net", "Ref", null, null, new LinearlyReferencedRange(0.0, 0.5));
-        OvertureRoute r2 = new OvertureRoute("Name", "Net", "Ref", null, null, new LinearlyReferencedRange(0.5, 1.0));
+        OvertureRoute r1 =
+                new OvertureRoute("Name", "Net", "Ref", null, null, new LinearlyReferencedRange(0.0, 0.5));
+        OvertureRoute r2 =
+                new OvertureRoute("Name", "Net", "Ref", null, null, new LinearlyReferencedRange(0.5, 1.0));
 
         assertNotEquals(r1, r2);
     }
 
     @Test
     void testNotEqualsOneNullRange() {
-        OvertureRoute r1 = new OvertureRoute("Name", "Net", "Ref", null, null, new LinearlyReferencedRange(0.0, 1.0));
+        OvertureRoute r1 =
+                new OvertureRoute("Name", "Net", "Ref", null, null, new LinearlyReferencedRange(0.0, 1.0));
         OvertureRoute r2 = new OvertureRoute("Name", "Net", "Ref", null, null, null);
 
         assertNotEquals(r1, r2);

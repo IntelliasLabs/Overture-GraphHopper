@@ -21,12 +21,10 @@ import com.graphhopper.reader.overture.road.segment.rule.OvertureProhibitedTrans
 import com.graphhopper.reader.overture.road.segment.rule.OvertureSubclassRule;
 import com.graphhopper.reader.overture.road.segment.rule.OvertureWidthRule;
 import com.graphhopper.reader.overture.road.surface.OvertureRoadSurface;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
@@ -45,10 +43,8 @@ class SubSegmentProcessor {
      * @param endLr end linearly-referenced position
      * @return the {@link LineString} in corresponding range
      */
-    static LineString getSubLineString(LineString rootLineString,
-                                       double startLr, double endLr) {
-        if (rootLineString == null)
-            return null;
+    static LineString getSubLineString(LineString rootLineString, double startLr, double endLr) {
+        if (rootLineString == null) return null;
 
         double length = SegmentSplitterUtils.calculateLength(rootLineString);
         double startLength = startLr * length;
@@ -63,13 +59,14 @@ class SubSegmentProcessor {
             double segLen = haversineDistance(p1, p2);
             double nextLength = iterateLength + segLen;
 
-            if (subCoordinates.isEmpty() && nextLength >= startLength - EPS && iterateLength <= startLength + EPS) {
-                if (abs(iterateLength - startLength) < EPS)
-                    addIfDistinct(subCoordinates, p1);
-                else if (abs(nextLength - startLength) < EPS)
-                    addIfDistinct(subCoordinates, p2);
+            if (subCoordinates.isEmpty()
+                    && nextLength >= startLength - EPS
+                    && iterateLength <= startLength + EPS) {
+                if (abs(iterateLength - startLength) < EPS) addIfDistinct(subCoordinates, p1);
+                else if (abs(nextLength - startLength) < EPS) addIfDistinct(subCoordinates, p2);
                 else
-                    addIfDistinct(subCoordinates, findPointAtDistance(rootLineString, startLength).orElse(p2));
+                    addIfDistinct(
+                            subCoordinates, findPointAtDistance(rootLineString, startLength).orElse(p2));
             }
 
             if (nextLength > startLength && nextLength < endLength) addIfDistinct(subCoordinates, p2);
@@ -77,7 +74,8 @@ class SubSegmentProcessor {
             if (nextLength >= endLength - EPS) {
                 if (abs(nextLength - endLength) < EPS) addIfDistinct(subCoordinates, p2);
                 else
-                    addIfDistinct(subCoordinates, findPointAtDistance(rootLineString, endLength).orElse(p2));
+                    addIfDistinct(
+                            subCoordinates, findPointAtDistance(rootLineString, endLength).orElse(p2));
                 break;
             }
 
@@ -89,8 +87,7 @@ class SubSegmentProcessor {
 
         return new LineString(
                 new CoordinateArraySequence(subCoordinates.toArray(Coordinate[]::new)),
-                rootLineString.getFactory()
-        );
+                rootLineString.getFactory());
     }
 
     /**
@@ -100,10 +97,9 @@ class SubSegmentProcessor {
      * @param endLr end linearly-referenced position
      * @return the {@link OvertureRoadProperties} in corresponding range
      */
-    static OvertureRoadProperties getPropertiesBetween(OvertureRoadProperties rootOvertureRoadProperties,
-                                                               double startLr, double endLr) {
-        if (rootOvertureRoadProperties == null)
-            return null;
+    static OvertureRoadProperties getPropertiesBetween(
+            OvertureRoadProperties rootOvertureRoadProperties, double startLr, double endLr) {
+        if (rootOvertureRoadProperties == null) return null;
 
         final Predicate<? super HasBetweenProperty> generalFilterBetweenProperty =
                 p -> isNullOrInRange(p, startLr, endLr);
@@ -115,171 +111,175 @@ class SubSegmentProcessor {
                 c -> c.getAt() >= startLr && c.getAt() <= endLr,
                 c -> new OvertureConnector(
                         c.getConnectorId(),
-                        recalculateAt(c.getAt(), startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        recalculateAt(c.getAt(), startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         final List<OvertureRoute> subRoutes = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getRoutes(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getRoutes(),
+                generalFilterBetweenProperty,
                 r -> new OvertureRoute(
-                        r.getName(), r.getNetwork(), r.getRef(),
-                        r.getSymbol(), r.getWikidata(),
-                        recalculateSubBetween(r, startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        r.getName(),
+                        r.getNetwork(),
+                        r.getRef(),
+                        r.getSymbol(),
+                        r.getWikidata(),
+                        recalculateSubBetween(r, startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         final List<OvertureDestination> subDestinations = filterAndGetSubProperties(
                 rootOvertureRoadProperties.getDestinations(),
-                d ->
-                        subConnectors.stream()
-                                .anyMatch(c -> c.getConnectorId().equals(d.getFromConnectorId()) ||
-                                        c.getConnectorId().equals(d.getToConnectorId())),
-                Function.identity()
-        );
+                d -> subConnectors.stream()
+                        .anyMatch(c -> c.getConnectorId().equals(d.getFromConnectorId())
+                                || c.getConnectorId().equals(d.getToConnectorId())),
+                Function.identity());
 
         final List<OvertureProhibitedTransition> subProhibitedTransitions = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getProhibitedTransitions(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getProhibitedTransitions(),
+                generalFilterBetweenProperty,
                 pt -> new OvertureProhibitedTransition(
-                        pt.getSequence(), pt.getFinalHeading(), pt.getWhen(),
-                        recalculateSubBetween(pt, startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        pt.getSequence(),
+                        pt.getFinalHeading(),
+                        pt.getWhen(),
+                        recalculateSubBetween(pt, startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         final List<OvertureRoadSurface> subRoadSurfaces = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getSurfaces(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getSurfaces(),
+                generalFilterBetweenProperty,
                 rs -> new OvertureRoadSurface(
                         rs.getSurfaceType(),
-                        recalculateSubBetween(rs, startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        recalculateSubBetween(rs, startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         final List<OvertureRoadFlags> subRoadFlags = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getFlags(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getFlags(),
+                generalFilterBetweenProperty,
                 rf -> new OvertureRoadFlags(
-                        rf.isBridge(), rf.isTunnel(), rf.isUnderConstruction(),
-                        rf.isAbandoned(), rf.isCovered(), rf.isIndoor(),
-                        recalculateSubBetween(rf, startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        rf.isBridge(),
+                        rf.isTunnel(),
+                        rf.isUnderConstruction(),
+                        rf.isAbandoned(),
+                        rf.isCovered(),
+                        rf.isIndoor(),
+                        recalculateSubBetween(rf, startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         final List<OvertureSpeedLimit> subSpeedLimits = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getSpeedLimits(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getSpeedLimits(),
+                generalFilterBetweenProperty,
                 sl -> new OvertureSpeedLimit(
-                        sl.getMaxSpeed(), sl.getMinSpeed(), sl.isMaxSpeedVariable(),
+                        sl.getMaxSpeed(),
+                        sl.getMinSpeed(),
+                        sl.isMaxSpeedVariable(),
                         recalculateSubBetween(sl, startLr, endLr, recalcMultiplierToNewBetweenEnd),
-                        sl.getWhen()
-                )
-        );
+                        sl.getWhen()));
 
         final List<OvertureWidthRule> subWidthRule = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getWidthRules(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getWidthRules(),
+                generalFilterBetweenProperty,
                 wr -> new OvertureWidthRule(
                         wr.getValue(),
-                        recalculateSubBetween(wr, startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        recalculateSubBetween(wr, startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         final List<OvertureSubclassRule> subclassRules = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getSubclassRules(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getSubclassRules(),
+                generalFilterBetweenProperty,
                 scr -> new OvertureSubclassRule(
                         scr.getValue(),
-                        recalculateSubBetween(scr, startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        recalculateSubBetween(scr, startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         final List<OvertureAccessRestriction> subAccessRestrictions = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getAccessRestrictions(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getAccessRestrictions(),
+                generalFilterBetweenProperty,
                 ar -> new OvertureAccessRestriction(
-                        ar.getAccessType(), ar.getWhen(),
-                        recalculateSubBetween(ar, startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        ar.getAccessType(),
+                        ar.getWhen(),
+                        recalculateSubBetween(ar, startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         final List<OvertureLevelRule> subLevelRules = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getLevelRules(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getLevelRules(),
+                generalFilterBetweenProperty,
                 sbl -> new OvertureLevelRule(
                         sbl.getValue(),
-                        recalculateSubBetween(sbl, startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        recalculateSubBetween(sbl, startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         final List<OvertureSource> subSources = filterAndGetSubProperties(
-                rootOvertureRoadProperties.getSources(), generalFilterBetweenProperty,
+                rootOvertureRoadProperties.getSources(),
+                generalFilterBetweenProperty,
                 s -> new OvertureSource(
-                        s.getProperty(), s.getDataset(), s.getLicense(),
-                        s.getRecordId(), s.getUpdateTime(), s.getConfidence(),
-                        recalculateSubBetween(s, startLr, endLr, recalcMultiplierToNewBetweenEnd)
-                )
-        );
+                        s.getProperty(),
+                        s.getDataset(),
+                        s.getLicense(),
+                        s.getRecordId(),
+                        s.getUpdateTime(),
+                        s.getConfidence(),
+                        recalculateSubBetween(s, startLr, endLr, recalcMultiplierToNewBetweenEnd)));
 
         OvertureNames rootOvertureNames = rootOvertureRoadProperties.getNames();
-        final OvertureNames namesSubRules = rootOvertureNames == null ?
-                null :
-                new OvertureNames(
-                        rootOvertureNames.getPrimary(), rootOvertureNames.getCommon(),
-                filterAndGetSubProperties(
-                        rootOvertureNames.getRules(), generalFilterBetweenProperty,
-                        nr -> new OvertureNameRule(
-                                nr.getVariant(), nr.getLanguage(), nr.getPerspectives(),
-                                nr.getValue(),
-                                recalculateSubBetween(nr, startLr, endLr, recalcMultiplierToNewBetweenEnd),
-                                nr.getSide()
-                        )
-                )
-        );
+        final OvertureNames namesSubRules = rootOvertureNames == null
+                ? null
+                : new OvertureNames(
+                        rootOvertureNames.getPrimary(),
+                        rootOvertureNames.getCommon(),
+                        filterAndGetSubProperties(
+                                rootOvertureNames.getRules(),
+                                generalFilterBetweenProperty,
+                                nr -> new OvertureNameRule(
+                                        nr.getVariant(),
+                                        nr.getLanguage(),
+                                        nr.getPerspectives(),
+                                        nr.getValue(),
+                                        recalculateSubBetween(nr, startLr, endLr, recalcMultiplierToNewBetweenEnd),
+                                        nr.getSide())));
 
         return new OvertureRoadProperties(
-                subConnectors, subRoutes,
+                subConnectors,
+                subRoutes,
                 rootOvertureRoadProperties.getRoadClass(),
-                subDestinations, subProhibitedTransitions,
-                subRoadSurfaces, subRoadFlags,
-                subSpeedLimits, subWidthRule,
+                subDestinations,
+                subProhibitedTransitions,
+                subRoadSurfaces,
+                subRoadFlags,
+                subSpeedLimits,
+                subWidthRule,
                 rootOvertureRoadProperties.getSubclass(),
-                subclassRules, subAccessRestrictions,
+                subclassRules,
+                subAccessRestrictions,
                 rootOvertureRoadProperties.getLevel(),
                 subLevelRules,
                 rootOvertureRoadProperties.getTheme(),
                 rootOvertureRoadProperties.getType(),
                 rootOvertureRoadProperties.getVersion(),
-                subSources, namesSubRules,
-                rootOvertureRoadProperties.getSubtype()
-        );
+                subSources,
+                namesSubRules,
+                rootOvertureRoadProperties.getSubtype());
     }
 
     private static double calculateMultiplier(double startLr, double endLr) {
         return 1.0 / (endLr - startLr);
     }
 
-    private static <T extends HasBetweenProperty> boolean isNullOrInRange(T p, double startLr, double endLr) {
-        if (p.getBetween() == null)
-            return true;
+    private static <T extends HasBetweenProperty> boolean isNullOrInRange(
+            T p, double startLr, double endLr) {
+        if (p.getBetween() == null) return true;
 
-        return p.getBetween().getStart() <= endLr &&
-                p.getBetween().getEnd() >= startLr;
+        return p.getBetween().getStart() < endLr && p.getBetween().getEnd() > startLr;
     }
 
-    private static <T> List<T> filterAndGetSubProperties(List<T> elements,
-                                                         Predicate<? super T> filterFunc,
-                                                         Function<T, T> createSubPropFunc) {
+    private static <T> List<T> filterAndGetSubProperties(
+            List<T> elements, Predicate<? super T> filterFunc, Function<T, T> createSubPropFunc) {
         return elements.stream()
                 .filter(filterFunc)
                 .map(createSubPropFunc)
                 .collect(toListIfNotEmptyOtherNull());
     }
 
-    private static double recalculateAt(double at, double startLr, double endLr, double recalcMultiplierToNewBetweenEnd) {
-        if (at == startLr)
-            return 0.0;
-        else if (at == endLr)
-            return 1.0;
+    private static double recalculateAt(
+            double at, double startLr, double endLr, double recalcMultiplierToNewBetweenEnd) {
+        if (at == startLr) return 0.0;
+        else if (at == endLr) return 1.0;
 
         return (at - startLr) * recalcMultiplierToNewBetweenEnd;
     }
 
-    private static <T extends HasBetweenProperty> LinearlyReferencedRange recalculateSubBetween(T p, double startLr, double endLr,
-                                                                                                double recalcMultiplierToNewBetweenEnd) {
-        if (p.getBetween() == null)
-            return null;
+    private static <T extends HasBetweenProperty> LinearlyReferencedRange recalculateSubBetween(
+            T p, double startLr, double endLr, double recalcMultiplierToNewBetweenEnd) {
+        if (p.getBetween() == null) return null;
 
         double recalcStartLr = p.getBetween().getStart();
         double recalcEndLr = p.getBetween().getEnd();
@@ -289,13 +289,11 @@ class SubSegmentProcessor {
 
         if (recalcStartLr > startLr)
             recalcStartLr = (recalcStartLr - startLr) * recalcMultiplierToNewBetweenEnd;
-        else if (recalcStartLr <= startLr)
-            recalcStartLr = 0.0;
+        else if (recalcStartLr <= startLr) recalcStartLr = 0.0;
 
         if (recalcEndLr < endLr)
             recalcEndLr = (recalcEndLr - startLr) * recalcMultiplierToNewBetweenEnd;
-        else if (recalcEndLr >= endLr)
-            recalcEndLr = 1.0;
+        else if (recalcEndLr >= endLr) recalcEndLr = 1.0;
 
         return new LinearlyReferencedRange(recalcStartLr, recalcEndLr);
     }

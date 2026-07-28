@@ -26,9 +26,7 @@ public class SegmentSplitterUtilsTest {
     @DisplayName("Distance 0 meters should return first Coordinate in LineString")
     void testDistanceZero() {
         LineString line =
-                gf.createLineString(new Coordinate[]
-                        {new Coordinate(0, 0), new Coordinate(0.0001, 0)}
-                );
+                gf.createLineString(new Coordinate[] {new Coordinate(0, 0), new Coordinate(0.0001, 0)});
 
         Optional<Coordinate> result = SegmentSplitterUtils.findPointAtDistance(line, 0.0);
 
@@ -41,9 +39,7 @@ public class SegmentSplitterUtilsTest {
     @DisplayName("Distance equal to total length should return last Coordinate")
     void testDistanceTotalLength() {
         LineString line =
-                gf.createLineString(new Coordinate[]
-                        {new Coordinate(0, 0), new Coordinate(0.0001, 0)}
-                );
+                gf.createLineString(new Coordinate[] {new Coordinate(0, 0), new Coordinate(0.0001, 0)});
 
         double totalLength = SegmentSplitterUtils.getTotalLength(line.getCoordinates());
 
@@ -58,9 +54,7 @@ public class SegmentSplitterUtilsTest {
     @DisplayName("Interpolate along single segment")
     void testMiddleDistance() {
         LineString line =
-                gf.createLineString(new Coordinate[]
-                        {new Coordinate(0, 0), new Coordinate(0.0001, 0)}
-                );
+                gf.createLineString(new Coordinate[] {new Coordinate(0, 0), new Coordinate(0.0001, 0)});
 
         double totalLength = SegmentSplitterUtils.getTotalLength(line.getCoordinates());
         double halfDistance = totalLength / 2;
@@ -76,9 +70,7 @@ public class SegmentSplitterUtilsTest {
     @DisplayName("Interpolate across multiple segments")
     void testMultipleSegments() {
         LineString line = gf.createLineString(new Coordinate[] {
-                new Coordinate(0, 0),
-                new Coordinate(0.0001, 0),
-                new Coordinate(0.0001, 0.0001)
+            new Coordinate(0, 0), new Coordinate(0.0001, 0), new Coordinate(0.0001, 0.0001)
         });
 
         double targetDistance = 15;

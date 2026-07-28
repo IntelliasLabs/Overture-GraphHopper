@@ -18,7 +18,9 @@ import com.graphhopper.storage.NodeAccess;
 import com.graphhopper.util.EdgeIteratorState;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -62,14 +64,16 @@ public class OvertureReaderTest {
         // ---------------------------------------------------------
 
         // 1. Verify Dependency Injection
-        assertSame(graph, reader.getGraph(),
+        assertSame(
+                graph,
+                reader.getGraph(),
                 "The stored Graph instance should be the exact object passed to the constructor.");
 
         // 2. Verify Internal State Initialization
-        assertNotNull(reader.getNodeMap(),
-                "Internal NodeMap should be initialized to a non-null object.");
-        assertTrue(reader.getNodeMap().isEmpty(),
-                "Internal NodeMap should be empty upon initialization.");
+        assertNotNull(
+                reader.getNodeMap(), "Internal NodeMap should be initialized to a non-null object.");
+        assertTrue(
+                reader.getNodeMap().isEmpty(), "Internal NodeMap should be empty upon initialization.");
     }
 
     /**
@@ -94,7 +98,9 @@ public class OvertureReaderTest {
         // ---------------------------------------------------------
         // Assert: Verify the file is stored
         // ---------------------------------------------------------
-        assertEquals(inputFile, reader.getOvertureFile(),
+        assertEquals(
+                inputFile,
+                reader.getOvertureFile(),
                 "The reader should store the exact File object provided via setFile.");
     }
 
@@ -120,9 +126,13 @@ public class OvertureReaderTest {
         // ---------------------------------------------------------
         // Assert: Verify bucket and key extraction
         // ---------------------------------------------------------
-        assertEquals("overturemaps-us-west-2", reader.getS3Bucket(),
+        assertEquals(
+                "overturemaps-us-west-2",
+                reader.getS3Bucket(),
                 "The bucket name should be extracted correctly from the S3 URL.");
-        assertEquals("release/2024-04-16.0/data.parquet", reader.getS3Key(),
+        assertEquals(
+                "release/2024-04-16.0/data.parquet",
+                reader.getS3Key(),
                 "The object key should be extracted correctly from the S3 URL.");
     }
 
@@ -149,10 +159,8 @@ public class OvertureReaderTest {
         // ---------------------------------------------------------
         // Assert: Verify storage
         // ---------------------------------------------------------
-        assertEquals(bucket, reader.getS3Bucket(),
-                "The reader should store the provided bucket name.");
-        assertEquals(key, reader.getS3Key(),
-                "The reader should store the provided object key.");
+        assertEquals(bucket, reader.getS3Bucket(), "The reader should store the provided bucket name.");
+        assertEquals(key, reader.getS3Key(), "The reader should store the provided object key.");
     }
 
     /**
@@ -172,11 +180,16 @@ public class OvertureReaderTest {
         // ---------------------------------------------------------
         // Act & Assert: Expect an exception
         // ---------------------------------------------------------
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            reader.setS3Source(invalidUrl);
-        }, "Should throw IllegalArgumentException when URL does not start with s3://");
+        Exception exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> {
+                    reader.setS3Source(invalidUrl);
+                },
+                "Should throw IllegalArgumentException when URL does not start with s3://");
 
-        assertEquals("S3 URL must start with 's3://'", exception.getMessage(),
+        assertEquals(
+                "S3 URL must start with 's3://'",
+                exception.getMessage(),
                 "Exception message should indicate the protocol error.");
     }
 
@@ -197,11 +210,16 @@ public class OvertureReaderTest {
         // ---------------------------------------------------------
         // Act & Assert: Expect an exception
         // ---------------------------------------------------------
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            reader.setS3Source(invalidUrl);
-        }, "Should throw IllegalArgumentException when URL is missing the object key.");
+        Exception exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> {
+                    reader.setS3Source(invalidUrl);
+                },
+                "Should throw IllegalArgumentException when URL is missing the object key.");
 
-        assertEquals("S3 URL must contain a bucket and a key (format: s3://bucket/key)", exception.getMessage(),
+        assertEquals(
+                "S3 URL must contain a bucket and a key (format: s3://bucket/key)",
+                exception.getMessage(),
                 "Exception message should explain the required format.");
     }
 
@@ -229,7 +247,9 @@ public class OvertureReaderTest {
         // ---------------------------------------------------------
         // Assert: Verify dependencies are stored by reference
         // ---------------------------------------------------------
-        assertSame(elevationProvider, reader.getElevationProvider(),
+        assertSame(
+                elevationProvider,
+                reader.getElevationProvider(),
                 "ElevationProvider should be correctly stored.");
         assertSame(areaIndex, reader.getAreaIndex(),
                 "AreaIndex should be correctly stored.");
@@ -307,17 +327,93 @@ public class OvertureReaderTest {
         verify(graph, times(1)).getNodes();
     }
 
-    // Helper to access private GetOrCreateNode method in OvertureReader
+    /**
+     * Helper to access the private getOrCreateNode method in OvertureReader, with no connector.
+     *
+     * <p>Passing {@code null} for the connector exercises the coordinate fallback, which is what these
+     * tests were written to cover and what still applies to sub-segment boundaries created by a property
+     * range. Connector-based identity is covered by {@link #testGetOrCreateNode_connectorIdWins} and
+     * {@link #testGetOrCreateNode_connectorAdoptsExistingCoordinateNode}.
+     */
     private int invokeGetOrCreateNode(
             OvertureReader reader, double lat, double lon, NodeAccess nodeAccess) {
+        return invokeGetOrCreateNode(reader, null, lat, lon, nodeAccess);
+    }
+
+    private int invokeGetOrCreateNode(
+            OvertureReader reader, String connectorId, double lat, double lon, NodeAccess nodeAccess) {
         try {
-            java.lang.reflect.Method method = OvertureReader.class.getDeclaredMethod(
-                    "getOrCreateNode", double.class, double.class, NodeAccess.class);
+            Method method = OvertureReader.class.getDeclaredMethod(
+                    "getOrCreateNode", String.class, double.class, double.class, NodeAccess.class);
             method.setAccessible(true);
-            return (int) method.invoke(reader, lat, lon, nodeAccess);
+            return (int) method.invoke(reader, connectorId, lat, lon, nodeAccess);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    @DisplayName("Two different coordinates sharing a connector become one node")
+    public void testGetOrCreateNode_connectorIdWins() {
+        BaseGraph graph = mock(BaseGraph.class);
+        NodeAccess nodeAccess = mock(NodeAccess.class);
+
+        when(graph.getNodeAccess()).thenReturn(nodeAccess);
+        when(graph.getNodes()).thenReturn(0);
+
+        OvertureReader reader = new OvertureReader(graph);
+
+        // Two segments meeting at one Overture connector, whose end points disagree by ~4 m. On the
+        // Florence extract this was the shape of 41% of all junctions, and coordinate keying left each
+        // one as two disconnected nodes.
+        int a = invokeGetOrCreateNode(reader, "connector-1", 43.7696000, 11.2558000, nodeAccess);
+        int b = invokeGetOrCreateNode(reader, "connector-1", 43.7696380, 11.2558210, nodeAccess);
+
+        assertEquals(a, b, "segments sharing a connector must share a node whatever the coordinates");
+        verify(nodeAccess, times(1)).setNode(anyInt(), anyDouble(), anyDouble());
+    }
+
+    @Test
+    @DisplayName(
+            "A connector adopts a node already created at its coordinate, rather than adding one")
+    public void testGetOrCreateNode_connectorAdoptsExistingCoordinateNode() {
+        BaseGraph graph = mock(BaseGraph.class);
+        NodeAccess nodeAccess = mock(NodeAccess.class);
+
+        when(graph.getNodeAccess()).thenReturn(nodeAccess);
+        when(graph.getNodes()).thenReturn(0);
+
+        OvertureReader reader = new OvertureReader(graph);
+
+        double lat = 43.7696;
+        double lon = 11.2558;
+
+        // A property-range boundary lands here first with no connector...
+        int viaCoordinate = invokeGetOrCreateNode(reader, null, lat, lon, nodeAccess);
+        // ...then a connector arrives at the same place. It must reuse the node, so the change can only
+        // ever merge more than coordinate keying did, never split something that used to be joined.
+        int viaConnector = invokeGetOrCreateNode(reader, "connector-2", lat, lon, nodeAccess);
+
+        assertEquals(viaCoordinate, viaConnector);
+        verify(nodeAccess, times(1)).setNode(anyInt(), anyDouble(), anyDouble());
+    }
+
+    @Test
+    @DisplayName("Distinct connectors at distinct coordinates stay distinct")
+    public void testGetOrCreateNode_distinctConnectorsStayDistinct() {
+        BaseGraph graph = mock(BaseGraph.class);
+        NodeAccess nodeAccess = mock(NodeAccess.class);
+
+        when(graph.getNodeAccess()).thenReturn(nodeAccess);
+        when(graph.getNodes()).thenReturn(0, 1);
+
+        OvertureReader reader = new OvertureReader(graph);
+
+        int a = invokeGetOrCreateNode(reader, "connector-a", 43.7696, 11.2558, nodeAccess);
+        int b = invokeGetOrCreateNode(reader, "connector-b", 43.7800, 11.2600, nodeAccess);
+
+        assertNotEquals(a, b, "different connectors in different places must not be merged");
+        verify(nodeAccess, times(2)).setNode(anyInt(), anyDouble(), anyDouble());
     }
 
     @Test
@@ -332,12 +428,14 @@ public class OvertureReaderTest {
         tempFile.deleteOnExit();
         reader.setFile(tempFile);
 
-        assertDoesNotThrow(() -> {
-            try {
-                reader.readGraph();
-            } catch (Exception ignored) {
-            }
-        }, "Reader should attempt to use the local file if the S3Client is not initialized.");
+        assertDoesNotThrow(
+                () -> {
+                    try {
+                        reader.readGraph();
+                    } catch (Exception ignored) {
+                    }
+                },
+                "Reader should attempt to use the local file if the S3Client is not initialized.");
     }
 
     @Test
@@ -351,13 +449,14 @@ public class OvertureReaderTest {
         reader.setS3Source("s3://bucket/data.geojson");
 
         Exception exception = assertThrows(IOException.class, reader::readGraph);
-        assertTrue(exception.getMessage().contains("GeoJSON directly from S3 is not supported"),
+        assertTrue(
+                exception.getMessage().contains("GeoJSON directly from S3 is not supported"),
                 "Should throw IOException explaining GeoJSON limitations on S3.");
     }
 
     @Test
     @DisplayName("S3 Strategy: Small Parquet (<20MB) routes to temp file download")
-    public void testParseFromS3_smallFileRoutesToDownload(){
+    public void testParseFromS3_smallFileRoutesToDownload() {
         BaseGraph graph = mock(BaseGraph.class);
         S3Client s3Client = mock(S3Client.class);
         OvertureReader reader = new OvertureReader(graph);
@@ -382,7 +481,7 @@ public class OvertureReaderTest {
 
     @Test
     @DisplayName("S3 Strategy: Large Parquet (>20MB) uses Cloud-Native Streaming")
-    public void testParseFromS3_largeFileRoutesToStreaming(){
+    public void testParseFromS3_largeFileRoutesToStreaming() {
         BaseGraph graph = mock(BaseGraph.class);
         S3Client s3Client = mock(S3Client.class);
         OvertureReader reader = new OvertureReader(graph);
@@ -390,7 +489,8 @@ public class OvertureReaderTest {
         reader.setS3Client(s3Client);
         reader.setS3Source("s3://bucket/large.parquet");
 
-        HeadObjectResponse head = HeadObjectResponse.builder().contentLength(30 * 1024 * 1024L).build();
+        HeadObjectResponse head =
+                HeadObjectResponse.builder().contentLength(30 * 1024 * 1024L).build();
         when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(head);
 
         try {
@@ -412,7 +512,9 @@ public class OvertureReaderTest {
         File unknownFile = new File("unsupported_format.txt");
         reader.setFile(unknownFile);
 
-        assertThrows(IOException.class, reader::readGraph,
+        assertThrows(
+                IOException.class,
+                reader::readGraph,
                 "Reader should throw IOException if the file extension is not .parquet or .geojson.");
     }
 
@@ -427,7 +529,9 @@ public class OvertureReaderTest {
         reader.setFile(geoJsonFile);
 
         try (var mockedParser = mockStatic(OvertureParser.class)) {
-            mockedParser.when(() -> OvertureParser.parse(any(File.class))).thenReturn(Collections.emptyList());
+            mockedParser
+                    .when(() -> OvertureParser.parse(any(File.class)))
+                    .thenReturn(Collections.emptyList());
 
             reader.readGraph();
 
@@ -445,17 +549,34 @@ public class OvertureReaderTest {
         reader.setS3Client(s3Client);
         reader.setS3Source("s3://bucket/data.parquet");
 
-        HeadObjectResponse head = HeadObjectResponse.builder().contentLength(50 * 1024 * 1024L).build();
+        HeadObjectResponse head =
+                HeadObjectResponse.builder().contentLength(50 * 1024 * 1024L).build();
         when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(head);
 
         try (var mockedParquetParser = mockStatic(OvertureParquetParser.class)) {
-            mockedParquetParser.when(() -> OvertureParquetParser.parse(any(S3ParquetInputFile.class)))
-                    .thenReturn(Collections.emptyList());
+            // The large-file S3 branch streams rather than materialising, so that a continent-sized
+            // extract does not have to fit in the heap before graph building starts.
+            mockedParquetParser
+                    .when(() -> OvertureParquetParser.stream(any(S3ParquetInputFile.class)))
+                    .thenReturn(emptySegmentStream());
 
             reader.readGraph();
 
-            mockedParquetParser.verify(() -> OvertureParquetParser.parse(any(S3ParquetInputFile.class)));
+            mockedParquetParser.verify(() -> OvertureParquetParser.stream(any(S3ParquetInputFile.class)));
         }
+    }
+
+    /** A trivial empty {@link OvertureParquetParser.SegmentStream}, so no final type has to be mocked. */
+    private static OvertureParquetParser.SegmentStream emptySegmentStream() {
+        return new OvertureParquetParser.SegmentStream() {
+            @Override
+            public Iterator<OvertureRoadSegment> iterator() {
+                return Collections.emptyIterator();
+            }
+
+            @Override
+            public void close() {}
+        };
     }
 
     @Test
@@ -478,31 +599,15 @@ public class OvertureReaderTest {
     @Test
     @DisplayName("ReadGraph creates nodes and edges from valid segments")
     public void testReadGraph_validSegments() throws IOException {
-        EncodingManager em = new EncodingManager.Builder()
-                .add(new SimpleBooleanEncodedValue("car_access", true))
-                .add(new SimpleBooleanEncodedValue("foot_access", true))
-                .add(new SimpleBooleanEncodedValue("bike_access", true))
-                .add(new DecimalEncodedValueImpl("car_average_speed", 7, 2, true))
-                .add(new DecimalEncodedValueImpl("foot_average_speed", 4, 1, true))
-                .add(new DecimalEncodedValueImpl("bike_average_speed", 4, 2, true))
-                .add(new EnumEncodedValue<>("surface", Surface.class))
-                .add(new EnumEncodedValue<>("road_class", RoadClass.class))
-                .add(new SimpleBooleanEncodedValue("road_class_link", true))
-                .add(new EnumEncodedValue<>("hazmat", Hazmat.class))
-                .add(new EnumEncodedValue<>("smoothness", Smoothness.class))
-                .add(new EnumEncodedValue<>("track_type", TrackType.class))
-                .add(new EnumEncodedValue<>("road_environment", RoadEnvironment.class))
-                .build();
+        EncodingManager em = OvertureTestFixtures.minimalEncodingManager();
         BaseGraph graph = new BaseGraph.Builder(em).create();
         OvertureReader reader = spy(new OvertureReader(graph));
         reader.setEncodedValueLookup(em);
 
         GeometryFactory gf = new GeometryFactory();
 
-        LineString line = gf.createLineString(new Coordinate[]{
-                new Coordinate(30.5, 50.4),
-                new Coordinate(30.6, 50.5)
-        });
+        LineString line = gf.createLineString(
+                new Coordinate[] {new Coordinate(30.5, 50.4), new Coordinate(30.6, 50.5)});
 
         OvertureRoadSegment segment = mock(OvertureRoadSegment.class);
         OvertureRoadProperties props = mock(OvertureRoadProperties.class);
@@ -529,9 +634,9 @@ public class OvertureReaderTest {
     @Test
     @DisplayName("ReadGraph skips segments marked as abandoned")
     public void testReadGraph_skipsAbandoned() throws IOException {
-        EncodingManager em = new EncodingManager.Builder()
-                .add(new SimpleBooleanEncodedValue("car_access", true))
-                .build();
+        // the reader resolves every encoded value before the segment loop and fails fast if one is
+        // missing, so a car_access-only manager would never reach the logic under test
+        EncodingManager em = OvertureTestFixtures.minimalEncodingManager();
         BaseGraph graph = new BaseGraph.Builder(em).create();
         OvertureReader reader = spy(new OvertureReader(graph));
         reader.setEncodedValueLookup(em);
@@ -551,13 +656,13 @@ public class OvertureReaderTest {
         assertEquals(0, graph.getEdges(), "Abandoned segment should not create an edge");
         verify(segment, never()).getLineString();
     }
-  
+
     @Test
     @DisplayName("Skip segments with null or single-point geometry")
     public void testReadGraph_handlesInvalidGeometry() throws IOException {
-        EncodingManager em = new EncodingManager.Builder()
-                .add(new SimpleBooleanEncodedValue("car_access", true))
-                .build();
+        // the reader resolves every encoded value before the segment loop and fails fast if one is
+        // missing, so a car_access-only manager would never reach the logic under test
+        EncodingManager em = OvertureTestFixtures.minimalEncodingManager();
         BaseGraph graph = new BaseGraph.Builder(em).create();
         OvertureReader reader = spy(new OvertureReader(graph));
         reader.setEncodedValueLookup(em);

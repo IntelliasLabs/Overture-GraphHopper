@@ -10,7 +10,7 @@ import com.graphhopper.config.Profile;
 import com.graphhopper.util.*;
 import com.graphhopper.util.shapes.GHPoint;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 
 import java.util.Locale;
 
@@ -20,7 +20,7 @@ import static com.graphhopper.json.Statement.Op.MULTIPLY;
 
 public class RoutingExample {
 
-    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     public static void main(String[] args) {
         String relDir = args.length == 1 ? args[0] : "";

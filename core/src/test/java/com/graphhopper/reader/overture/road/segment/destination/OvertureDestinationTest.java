@@ -1,22 +1,23 @@
 package com.graphhopper.reader.overture.road.segment.destination;
 
-import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
+import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
 import java.util.Collections;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class OvertureDestinationTest {
 
     @Test
     void testConstructorAndGetters() {
         // Arrange
-        OvertureDestinationLabel label = new OvertureDestinationLabel("San Jose", OvertureDestinationLabelType.STREET);
+        OvertureDestinationLabel label =
+                new OvertureDestinationLabel("San Jose", OvertureDestinationLabelType.STREET);
         List<OvertureDestinationLabel> labels = Collections.singletonList(label);
 
-        List<OvertureDestinationSymbol> symbols = Collections.singletonList(OvertureDestinationSymbol.AIRPORT);
+        List<OvertureDestinationSymbol> symbols =
+                Collections.singletonList(OvertureDestinationSymbol.AIRPORT);
 
         String fromConnector = "conn_start";
         String toSegment = "seg_target";
@@ -25,14 +26,7 @@ class OvertureDestinationTest {
 
         // Act
         OvertureDestination destination = new OvertureDestination(
-                labels,
-                symbols,
-                fromConnector,
-                toSegment,
-                toConnector,
-                null,
-                heading
-        );
+                labels, symbols, fromConnector, toSegment, toConnector, null, heading);
 
         // Assert
         assertEquals(labels, destination.getLabels());
@@ -71,13 +65,13 @@ class OvertureDestinationTest {
      */
     private OvertureDestination createTestDestination(String val, String fromConn) {
         return new OvertureDestination(
-                Collections.singletonList(new OvertureDestinationLabel(val, OvertureDestinationLabelType.STREET)),
+                Collections.singletonList(
+                        new OvertureDestinationLabel(val, OvertureDestinationLabelType.STREET)),
                 Collections.singletonList(OvertureDestinationSymbol.INFO),
                 fromConn,
                 "target_seg",
                 "target_conn",
                 null,
-                TravelHeading.FORWARD
-        );
+                TravelHeading.FORWARD);
     }
 }

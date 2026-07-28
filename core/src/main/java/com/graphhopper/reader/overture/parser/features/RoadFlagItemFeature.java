@@ -6,7 +6,6 @@ package com.graphhopper.reader.overture.parser.features;
  * Used for extracting fields inside item of the {@code road_flags.items} array.
  */
 public enum RoadFlagItemFeature implements FeatureParser {
-
     VALUES(false, true),
     BETWEEN(true, true);
 
@@ -42,5 +41,4 @@ public enum RoadFlagItemFeature implements FeatureParser {
     public boolean isArray() {
         return isArray;
     }
-
 }

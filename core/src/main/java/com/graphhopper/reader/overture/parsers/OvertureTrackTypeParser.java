@@ -16,8 +16,16 @@ import java.util.List;
  * surface material to determine the firmness and accessibility grade.
  * </p>
  */
-public final class OvertureTrackTypeParser {
-    private OvertureTrackTypeParser() {}
+public final class OvertureTrackTypeParser implements OvertureTagParser {
+
+    private final EnumEncodedValue<TrackType> trackTypeEnc;
+
+    /**
+     * @param trackTypeEnc the encoded value representing track type
+     */
+    public OvertureTrackTypeParser(EnumEncodedValue<TrackType> trackTypeEnc) {
+        this.trackTypeEnc = trackTypeEnc;
+    }
 
     /**
      * Determines the {@link TrackType} grade based on the segment's surface.
@@ -73,17 +81,15 @@ public final class OvertureTrackTypeParser {
     }
 
     /**
-     * Parses {@code TrackType} from the road segment and
-     * applies it to the given graph edge
+     * Parses {@code TrackType} from the road segment and applies it to the given graph edge.
      *
-     * @param edge      the graph edge to update
-     * @param segment   the Overture road segment
-     * @param trackTypeEnc the encoded value representing track type
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; track type is inferred entirely from the segment
      */
-    public static void parseTrackType(
-            EdgeIteratorState edge,
-            OvertureRoadSegment segment,
-            EnumEncodedValue<TrackType> trackTypeEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         TrackType trackType = parse(segment);
         edge.set(trackTypeEnc, trackType);
     }

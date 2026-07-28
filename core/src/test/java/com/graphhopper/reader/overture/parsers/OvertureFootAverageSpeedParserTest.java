@@ -34,7 +34,7 @@ public class OvertureFootAverageSpeedParserTest {
     void testSteps_ReducedSpeed() {
         when(properties.getRoadClass()).thenReturn(OvertureRoadClass.STEPS);
 
-        OvertureFootAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        new OvertureFootAverageSpeedParser(speedEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(speedEnc, 3.0);
     }
@@ -47,7 +47,7 @@ public class OvertureFootAverageSpeedParserTest {
     void testStandardRoads_DefaultSpeed(OvertureRoadClass roadClass) {
         when(properties.getRoadClass()).thenReturn(roadClass);
 
-        OvertureFootAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        new OvertureFootAverageSpeedParser(speedEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(speedEnc, 5.0);
     }
@@ -57,7 +57,7 @@ public class OvertureFootAverageSpeedParserTest {
     void testUnknownRoadClass_DefaultSpeed() {
         when(properties.getRoadClass()).thenReturn(OvertureRoadClass.UNKNOWN);
 
-        OvertureFootAverageSpeedParser.parseSpeed(edge, segment, speedEnc);
+        new OvertureFootAverageSpeedParser(speedEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(speedEnc, 5.0);
     }

@@ -1,49 +1,65 @@
 package com.graphhopper.reader.overture.road.segment.destination;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class OvertureDestinationSymbolTest {
 
     @Test
     void testFromStringValidLowerCase() {
-        assertEquals(OvertureDestinationSymbol.MOTORWAY, OvertureDestinationSymbol.fromString("motorway"));
-        assertEquals(OvertureDestinationSymbol.AIRPORT, OvertureDestinationSymbol.fromString("airport"));
-        assertEquals(OvertureDestinationSymbol.HOSPITAL, OvertureDestinationSymbol.fromString("hospital"));
+        assertEquals(
+                OvertureDestinationSymbol.MOTORWAY, OvertureDestinationSymbol.fromString("motorway"));
+        assertEquals(
+                OvertureDestinationSymbol.AIRPORT, OvertureDestinationSymbol.fromString("airport"));
+        assertEquals(
+                OvertureDestinationSymbol.HOSPITAL, OvertureDestinationSymbol.fromString("hospital"));
         assertEquals(OvertureDestinationSymbol.CENTER, OvertureDestinationSymbol.fromString("center"));
-        assertEquals(OvertureDestinationSymbol.TRAIN_STATION, OvertureDestinationSymbol.fromString("train_station"));
-        assertEquals(OvertureDestinationSymbol.RESTROOMS, OvertureDestinationSymbol.fromString("restrooms"));
+        assertEquals(
+                OvertureDestinationSymbol.TRAIN_STATION,
+                OvertureDestinationSymbol.fromString("train_station"));
+        assertEquals(
+                OvertureDestinationSymbol.RESTROOMS, OvertureDestinationSymbol.fromString("restrooms"));
     }
 
     @Test
     void testFromStringValidUpperCase() {
-        assertEquals(OvertureDestinationSymbol.INDUSTRIAL, OvertureDestinationSymbol.fromString("INDUSTRIAL"));
-        assertEquals(OvertureDestinationSymbol.PARKING, OvertureDestinationSymbol.fromString("PARKING"));
+        assertEquals(
+                OvertureDestinationSymbol.INDUSTRIAL, OvertureDestinationSymbol.fromString("INDUSTRIAL"));
+        assertEquals(
+                OvertureDestinationSymbol.PARKING, OvertureDestinationSymbol.fromString("PARKING"));
         assertEquals(OvertureDestinationSymbol.BUS, OvertureDestinationSymbol.fromString("BUS"));
         assertEquals(OvertureDestinationSymbol.FERRY, OvertureDestinationSymbol.fromString("FERRY"));
     }
 
     @Test
     void testFromStringValidMixedCase() {
-        assertEquals(OvertureDestinationSymbol.REST_AREA, OvertureDestinationSymbol.fromString("Rest_Area"));
-        assertEquals(OvertureDestinationSymbol.MOTORROAD, OvertureDestinationSymbol.fromString("MotorRoad"));
-        assertEquals(OvertureDestinationSymbol.FUEL_DIESEL, OvertureDestinationSymbol.fromString("Fuel_Diesel"));
-        assertEquals(OvertureDestinationSymbol.CAMP_SITE, OvertureDestinationSymbol.fromString("Camp_Site"));
+        assertEquals(
+                OvertureDestinationSymbol.REST_AREA, OvertureDestinationSymbol.fromString("Rest_Area"));
+        assertEquals(
+                OvertureDestinationSymbol.MOTORROAD, OvertureDestinationSymbol.fromString("MotorRoad"));
+        assertEquals(
+                OvertureDestinationSymbol.FUEL_DIESEL, OvertureDestinationSymbol.fromString("Fuel_Diesel"));
+        assertEquals(
+                OvertureDestinationSymbol.CAMP_SITE, OvertureDestinationSymbol.fromString("Camp_Site"));
     }
 
     @Test
     void testFromStringAllValues() {
         assertEquals(OvertureDestinationSymbol.FUEL, OvertureDestinationSymbol.fromString("fuel"));
-        assertEquals(OvertureDestinationSymbol.VIEWPOINT, OvertureDestinationSymbol.fromString("viewpoint"));
+        assertEquals(
+                OvertureDestinationSymbol.VIEWPOINT, OvertureDestinationSymbol.fromString("viewpoint"));
         assertEquals(OvertureDestinationSymbol.FOOD, OvertureDestinationSymbol.fromString("food"));
-        assertEquals(OvertureDestinationSymbol.LODGING, OvertureDestinationSymbol.fromString("lodging"));
+        assertEquals(
+                OvertureDestinationSymbol.LODGING, OvertureDestinationSymbol.fromString("lodging"));
         assertEquals(OvertureDestinationSymbol.INFO, OvertureDestinationSymbol.fromString("info"));
-        assertEquals(OvertureDestinationSymbol.INTERCHANGE, OvertureDestinationSymbol.fromString("interchange"));
+        assertEquals(
+                OvertureDestinationSymbol.INTERCHANGE, OvertureDestinationSymbol.fromString("interchange"));
     }
 
     @Test
     void testFromStringThrowsOnNull() {
-        assertNull( OvertureDestinationSymbol.fromString(null));
+        assertNull(OvertureDestinationSymbol.fromString(null));
     }
 
     @Test

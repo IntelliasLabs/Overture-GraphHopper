@@ -25,7 +25,7 @@ import com.graphhopper.config.LMProfile;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.shapes.GHPoint;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import com.graphhopper.reader.DataReaderInitializer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,7 +43,7 @@ public class RoutingAdditivityTest {
 
     private static final String GH_LOCATION = "../target/routing-additivity-test-gh";
     private static GraphHopper graphHopper;
-    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static final DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     @BeforeAll
     public static void setup() {

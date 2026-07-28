@@ -1,17 +1,16 @@
 package com.graphhopper.reader.overture.aws;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
 import org.apache.parquet.io.SeekableInputStream;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
-
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 public class S3ParquetInputFileTest {
     @Test
@@ -21,9 +20,8 @@ public class S3ParquetInputFileTest {
         String key = "my-key.parquet";
         long expectedSize = 500L;
 
-        HeadObjectResponse mockResponse = HeadObjectResponse.builder()
-                .contentLength(expectedSize)
-                .build();
+        HeadObjectResponse mockResponse =
+                HeadObjectResponse.builder().contentLength(expectedSize).build();
 
         when(mockClient.headObject(any(HeadObjectRequest.class))).thenReturn(mockResponse);
 
@@ -35,7 +33,7 @@ public class S3ParquetInputFileTest {
 
     @Test
     void testConstructor_FailsOnNetworkError() {
-        try(S3Client mockClient = mock(S3Client.class)) {
+        try (S3Client mockClient = mock(S3Client.class)) {
 
             when(mockClient.headObject(any(HeadObjectRequest.class)))
                     .thenThrow(SdkException.builder().message("S3 Unavailable").build());
@@ -47,7 +45,8 @@ public class S3ParquetInputFileTest {
     @Test
     void testNewStream_ReturnsCorrectInstance() throws IOException {
         S3Client mockClient = mock(S3Client.class);
-        HeadObjectResponse mockResponse = HeadObjectResponse.builder().contentLength(100L).build();
+        HeadObjectResponse mockResponse =
+                HeadObjectResponse.builder().contentLength(100L).build();
         when(mockClient.headObject(any(HeadObjectRequest.class))).thenReturn(mockResponse);
 
         S3ParquetInputFile inputFile = new S3ParquetInputFile(mockClient, "bucket", "key");

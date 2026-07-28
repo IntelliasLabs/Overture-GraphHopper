@@ -1,6 +1,7 @@
 package com.graphhopper.reader.overture.parser.field.extractors;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.graphhopper.reader.overture.parser.features.SegmentFeature;
 import com.graphhopper.reader.overture.road.segment.OvertureFeatureType;
 
 /**
@@ -16,7 +17,8 @@ public class FeatureTypeExtractor {
      * @return the {@link OvertureFeatureType}, or {@code null} if missing or invalid
      */
     public static OvertureFeatureType extractFeatureType(JsonNode segmentJson) {
-        return null;
+        return OvertureFeatureType.fromString(
+                SegmentFeature.FEATURE_TYPE.parseString(segmentJson, null));
     }
     /**
      * Checks for the presence of the {@code feature_type} property.
@@ -24,6 +26,7 @@ public class FeatureTypeExtractor {
      * @return {@code true} if the property exists and is not null
      */
     public static boolean featureTypeExists(JsonNode segmentJson) {
-        return true;
+        JsonNode node = SegmentFeature.FEATURE_TYPE.getFeature(segmentJson, null);
+        return node != null && !node.isNull();
     }
 }

@@ -1,5 +1,11 @@
 package com.graphhopper.reader.overture.aws;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
@@ -9,13 +15,6 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 /**
  * Utility class to create S3 clients for accessing public Overture Maps data.
@@ -29,8 +28,7 @@ public final class OvertureS3Client {
     private static final long INITIAL_BACKOFF_MS = 100;
     private static final double BACKOFF_MULTIPLIER = 2.0;
 
-    private OvertureS3Client() {
-    }
+    private OvertureS3Client() {}
 
     /**
      * Creates an S3 client configured for anonymous access in the specified region.
@@ -55,16 +53,19 @@ public final class OvertureS3Client {
      * @return The destination file after successful download.
      * @throws IOException If an I/O error occurs or the S3 download fails after all retries.
      */
-    public static File downloadFile(S3Client client, String bucket, String key, File destination) throws IOException {
-        return executeWithRetry(() -> {
-            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .build();
+    public static File downloadFile(S3Client client, String bucket, String key, File destination)
+            throws IOException {
+        return executeWithRetry(
+                () -> {
+                    GetObjectRequest getObjectRequest =
+                            GetObjectRequest.builder().bucket(bucket).key(key).build();
 
-            client.getObject(getObjectRequest, ResponseTransformer.toFile(destination.toPath()));
-            return destination;
-        }, "downloadFile", bucket, key);
+                    client.getObject(getObjectRequest, ResponseTransformer.toFile(destination.toPath()));
+                    return destination;
+                },
+                "downloadFile",
+                bucket,
+                key);
     }
 
     /**
@@ -77,14 +78,17 @@ public final class OvertureS3Client {
      * @return An InputStream reading directly from the S3 object
      * @throws IOException If the stream cannot be initiated after all retries
      */
-    public static InputStream streamFile(S3Client client, String bucket, String key) throws IOException {
-        return executeWithRetry(() -> {
-            GetObjectRequest request = GetObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .build();
-            return client.getObject(request);
-        }, "streamFile", bucket, key);
+    public static InputStream streamFile(S3Client client, String bucket, String key)
+            throws IOException {
+        return executeWithRetry(
+                () -> {
+                    GetObjectRequest request =
+                            GetObjectRequest.builder().bucket(bucket).key(key).build();
+                    return client.getObject(request);
+                },
+                "streamFile",
+                bucket,
+                key);
     }
 
     /**
@@ -97,19 +101,20 @@ public final class OvertureS3Client {
      * @return A list of object keys found.
      * @throws IOException If an S3 service error occurs after all retries.
      */
-    public static List<String> listFiles(S3Client client, String bucket, String prefix) throws IOException {
-        return executeWithRetry(() -> {
-            ListObjectsV2Request listRequest = ListObjectsV2Request.builder()
-                    .bucket(bucket)
-                    .prefix(prefix)
-                    .build();
+    public static List<String> listFiles(S3Client client, String bucket, String prefix)
+            throws IOException {
+        return executeWithRetry(
+                () -> {
+                    ListObjectsV2Request listRequest =
+                            ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).build();
 
-            ListObjectsV2Response listResponse = client.listObjectsV2(listRequest);
+                    ListObjectsV2Response listResponse = client.listObjectsV2(listRequest);
 
-            return listResponse.contents().stream()
-                    .map(S3Object::key)
-                    .collect(Collectors.toList());
-        }, "listFiles", bucket, prefix);
+                    return listResponse.contents().stream().map(S3Object::key).collect(Collectors.toList());
+                },
+                "listFiles",
+                bucket,
+                prefix);
     }
 
     /**
@@ -123,13 +128,15 @@ public final class OvertureS3Client {
      * @throws IOException if the S3 request fails after all retries.
      */
     public static long getObjectSize(S3Client client, String bucket, String key) throws IOException {
-        return executeWithRetry(() -> {
-            HeadObjectRequest request = HeadObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .build();
-            return client.headObject(request).contentLength();
-        }, "getObjectSize", bucket, key);
+        return executeWithRetry(
+                () -> {
+                    HeadObjectRequest request =
+                            HeadObjectRequest.builder().bucket(bucket).key(key).build();
+                    return client.headObject(request).contentLength();
+                },
+                "getObjectSize",
+                bucket,
+                key);
     }
 
     /**
@@ -144,17 +151,21 @@ public final class OvertureS3Client {
      * @return an {@link InputStream} containing the bytes from {@code start} to {@code end}.
      * @throws IOException if the range request fails after all retries.
      */
-    public static InputStream openRangeStream(S3Client client, String bucket, String key,
-                                              long start, long end) throws IOException {
+    public static InputStream openRangeStream(
+            S3Client client, String bucket, String key, long start, long end) throws IOException {
         String rangeHeader = "bytes=" + start + "-" + end;
-        return executeWithRetry(() -> {
-            GetObjectRequest request = GetObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .range(rangeHeader)
-                    .build();
-            return client.getObject(request);
-        }, "openRangeStream", bucket, key);
+        return executeWithRetry(
+                () -> {
+                    GetObjectRequest request = GetObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(key)
+                            .range(rangeHeader)
+                            .build();
+                    return client.getObject(request);
+                },
+                "openRangeStream",
+                bucket,
+                key);
     }
 
     /**
@@ -168,8 +179,9 @@ public final class OvertureS3Client {
      * @return The result of the operation
      * @throws IOException If the operation fails after all retries or encounters a non-retryable error
      */
-    private static <T> T executeWithRetry(S3Operation<T> operation, String operationName,
-                                          String bucket, String key) throws IOException {
+    private static <T> T executeWithRetry(
+            S3Operation<T> operation, String operationName, String bucket, String key)
+            throws IOException {
         int attempt = 0;
         long backoffMs = INITIAL_BACKOFF_MS;
         Exception lastException = null;
@@ -201,8 +213,15 @@ public final class OvertureS3Client {
                 }
 
                 if (shouldRetry) {
-                    LOGGER.warn("{} on {} (attempt {}/{}): bucket={}, key={}, error={}",
-                            errorType, operationName, attempt, DEFAULT_MAX_RETRIES, bucket, key, e.getMessage());
+                    LOGGER.warn(
+                            "{} on {} (attempt {}/{}): bucket={}, key={}, error={}",
+                            errorType,
+                            operationName,
+                            attempt,
+                            DEFAULT_MAX_RETRIES,
+                            bucket,
+                            key,
+                            e.getMessage());
 
                     if (attempt < DEFAULT_MAX_RETRIES) {
                         performWait(backoffMs);
@@ -213,17 +232,28 @@ public final class OvertureS3Client {
                     String message = (e instanceof S3Exception && ((S3Exception) e).awsErrorDetails() != null)
                             ? ((S3Exception) e).awsErrorDetails().errorMessage()
                             : e.getMessage();
-                    LOGGER.error("Non-retryable {} on {}: bucket={}, key={}, error={}",
-                            errorType, operationName, bucket, key, message);
+                    LOGGER.error(
+                            "Non-retryable {} on {}: bucket={}, key={}, error={}",
+                            errorType,
+                            operationName,
+                            bucket,
+                            key,
+                            message);
                     throw new IOException("S3 service error: " + message, e);
                 }
             }
         }
 
-        LOGGER.error("All {} retries exhausted for {}: bucket={}, key={}",
-                DEFAULT_MAX_RETRIES, operationName, bucket, key);
-        throw new IOException("Failed to " + operationName + " after " + DEFAULT_MAX_RETRIES +
-                " attempts for key: " + key + " in bucket: " + bucket, lastException);
+        LOGGER.error(
+                "All {} retries exhausted for {}: bucket={}, key={}",
+                DEFAULT_MAX_RETRIES,
+                operationName,
+                bucket,
+                key);
+        throw new IOException(
+                "Failed to " + operationName + " after " + DEFAULT_MAX_RETRIES + " attempts for key: " + key
+                        + " in bucket: " + bucket,
+                lastException);
     }
 
     /**

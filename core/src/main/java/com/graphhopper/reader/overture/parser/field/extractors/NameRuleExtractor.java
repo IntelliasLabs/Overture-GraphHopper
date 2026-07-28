@@ -38,8 +38,8 @@ public class NameRuleExtractor {
 
         Perspectives perspectives = PerspectivesExtractor.extractPerspectives(ruleJson, featureId);
 
-        LinearlyReferencedRange between =
-                BetweenExtractor.extractBetween(NameRuleFeature.BETWEEN.getFeature(ruleJson, featureId), SegmentFeature.RULES, featureId);
+        LinearlyReferencedRange between = BetweenExtractor.extractBetween(
+                NameRuleFeature.BETWEEN.getFeature(ruleJson, featureId), SegmentFeature.RULES, featureId);
 
         String sideStr = NameRuleFeature.SIDE.parseString(ruleJson, featureId);
         Side side = Side.fromString(sideStr);

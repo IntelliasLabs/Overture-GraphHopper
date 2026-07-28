@@ -1,8 +1,8 @@
 package com.graphhopper.reader.overture.road.surface;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link RoadSurfaceType} conversion helpers.
@@ -38,4 +38,3 @@ class RoadSurfaceTypeTest {
         assertEquals("gravel", RoadSurfaceType.GRAVEL.toString());
     }
 }
-

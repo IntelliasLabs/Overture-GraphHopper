@@ -25,7 +25,7 @@ import com.graphhopper.gtfs.PtGraph;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ public class AnalysisTest {
 
     private static final String GRAPH_LOC = "target/AnalysisTest";
     private static GraphHopperGtfs graphHopperGtfs;
-    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     @BeforeAll
     public static void init() {

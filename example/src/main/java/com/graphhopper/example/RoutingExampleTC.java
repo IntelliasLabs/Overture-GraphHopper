@@ -10,7 +10,7 @@ import com.graphhopper.config.Profile;
 import com.graphhopper.util.TurnCostsConfig;
 import com.graphhopper.util.GHUtility;
 import com.graphhopper.util.Parameters;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 
 import java.util.Arrays;
 import java.util.List;
@@ -70,7 +70,7 @@ public class RoutingExampleTC {
     // see RoutingExample for more details
     static GraphHopper createGraphHopperInstance(String ghLoc) {
         GraphHopper hopper = new GraphHopper();
-        hopper.setDataReaderInitializer(OSMReader::new);
+        hopper.setDataReaderInitializer(OsmSupport::create);
         hopper.setDataFile(ghLoc);
         hopper.setGraphHopperLocation("target/routing-tc-graph-cache");
         // add all encoded values that are used in the custom model, these are also available as path details or for client-side custom models

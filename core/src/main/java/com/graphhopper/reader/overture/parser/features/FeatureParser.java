@@ -1,12 +1,12 @@
 package com.graphhopper.reader.overture.parser.features;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 
 /**
  * Interface for parsing Overture Map features from JSON nodes.
@@ -48,7 +48,11 @@ public interface FeatureParser extends FeatureFinder {
      */
     default Integer parseInteger(JsonNode featureJson, String featureId) {
         JsonNode node = getFeature(featureJson, featureId);
-        return (node != null && node.isIntegralNumber() || node.canConvertToInt())
+        // The parentheses matter: written as (node != null && isIntegralNumber()) || canConvertToInt()
+        // the null guard was defeated by precedence, so an absent field reached canConvertToInt() on a
+        // null node and threw. Nothing noticed because every caller that could pass an absent field was
+        // an unimplemented extractor.
+        return (node != null && (node.isIntegralNumber() || node.canConvertToInt()))
                 ? node.asInt()
                 : null;
     }

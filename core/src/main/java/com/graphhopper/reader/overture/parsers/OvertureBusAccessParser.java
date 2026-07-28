@@ -1,61 +1,69 @@
 package com.graphhopper.reader.overture.parsers;
 
-import com.graphhopper.reader.overture.access.restriction.AccessType;
 import com.graphhopper.reader.overture.access.restriction.OvertureAccessRestriction;
+import com.graphhopper.reader.overture.access.restriction.scope.OvertureScopes;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelMode;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
 import com.graphhopper.routing.ev.BooleanEncodedValue;
 import com.graphhopper.util.EdgeIteratorState;
 
 /**
- * Parser for mapping Overture Maps road properties to bus access encoded values.
- * <p>
- * This parser interprets the {@link OvertureAccessRestriction} theme from Overture
- * and converts it into GraphHopper's internal {@link BooleanEncodedValue} format.
- * </p>
+ * Parses bus access restrictions from Overture road segment data and sets directional access flags on
+ * a graph edge.
+ *
+ * <p>Interprets the {@link OvertureAccessRestriction} theme from Overture into GraphHopper's {@link
+ * BooleanEncodedValue} format. Deliberately identical in shape to {@link OvertureCarAccessParser},
+ * delegating to {@link OvertureAccessParser#isAccessAllowed} rather than matching modes itself. This
+ * parser previously did its own mode matching and wrote a single non-directional value, which made it
+ * disagree with the car, bike and foot parsers on two counts: it ignored {@code when.heading}, so a
+ * oneway denial closed the road in both directions, and it re-derived the {@link TravelMode} hierarchy
+ * instead of reusing the one place that knows it.
+ *
+ * <p>The hierarchy needs nothing bus-specific: {@code getModesWithParents("bus")} already yields
+ * {@code bus}, {@code motor_vehicle} and {@code vehicle}, so a general motor-vehicle denial closes the
+ * road to buses while a {@code {mode: bus, access_type: allowed}} rule lifts it again.
  */
-public class OvertureBusAccessParser {
-    private OvertureBusAccessParser() {}
+public final class OvertureBusAccessParser implements OvertureTagParser {
+
+    private final BooleanEncodedValue accessEnc;
 
     /**
-     * Parses road access permissions for buses based on Overture road segment access restrictions.
-     * <p>
-     * The method evaluates hierarchical access rules:
-     * 1. Specific bus restrictions ({@link TravelMode#BUS}).
-     * 2. Motor vehicle restrictions ({@link TravelMode#MOTOR_VEHICLE}).
-     * 3. General restrictions (where no mode is specified).
-     * </p>
-     *
-     * @param edge      the GraphHopper edge where the access permission will be stored
-     * @param segment   the Overture road segment containing the access properties
-     * @param accessEnc the boolean encoded value used to store bus accessibility
+     * @param accessEnc the encoded value representing bus access
      */
-    public static void parseAccess(
-            EdgeIteratorState edge, OvertureRoadSegment segment, BooleanEncodedValue accessEnc) {
-        var props = segment.getProperties();
-        if (props == null || props.getAccessRestrictions() == null) {
-            edge.set(accessEnc, true);
+    public OvertureBusAccessParser(BooleanEncodedValue accessEnc) {
+        this.accessEnc = accessEnc;
+    }
+
+    /**
+     * Determines bus access for the given road segment and applies it to the edge.
+     *
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; access comes entirely from the segment's restrictions
+     */
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
+        var properties = segment.getProperties();
+
+        // A segment closed to everything is closed to buses, whatever any per-mode rule says.
+        if (!segment.isAccessible()) {
+            edge.set(accessEnc, false, false);
             return;
         }
 
-        var restrictions = props.getAccessRestrictions();
-        boolean access = true;
-        for (OvertureAccessRestriction restriction : restrictions) {
-            if (!restriction.hasAccessType()) {
-                continue;
-            }
+        var restrictions = properties == null ? null : properties.getAccessRestrictions();
 
-            var modes = restriction.hasWhen() ? restriction.getWhen().getMode() : null;
-            if (modes == null || modes.isEmpty()) {
-                access = restriction.getAccessType() != AccessType.DENIED;
-            } else if (modes.contains(TravelMode.BUS)) {
-                access = restriction.getAccessType() != AccessType.DENIED;
-                break;
-            } else if (modes.contains(TravelMode.MOTOR_VEHICLE)) {
-                access = restriction.getAccessType() != AccessType.DENIED;
-            }
+        if (restrictions == null || restrictions.isEmpty()) {
+            edge.set(accessEnc, true, true);
+            return;
         }
 
-        edge.set(accessEnc, access);
+        var byHeading = OvertureScopes.byHeading(restrictions, OvertureScopes::headingOf);
+
+        boolean canFwd = OvertureAccessParser.isAccessAllowed(byHeading.forward(), "bus");
+        boolean canBwd = OvertureAccessParser.isAccessAllowed(byHeading.backward(), "bus");
+
+        edge.set(accessEnc, canFwd, canBwd);
     }
 }

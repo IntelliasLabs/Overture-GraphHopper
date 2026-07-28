@@ -1,8 +1,9 @@
 package com.graphhopper.reader.overture.parser.parquet;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.LineString;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class WKBGeometryDecoderTest {
 
@@ -11,8 +12,8 @@ public class WKBGeometryDecoderTest {
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i + 1), 16));
+            data[i / 2] =
+                    (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
     }
@@ -70,14 +71,15 @@ public class WKBGeometryDecoderTest {
             WKBGeometryDecoder.decodeLineString(hexToBytes(wkbHex));
         });
 
-        assertTrue(exception.getMessage().contains("Expected LineString"),
+        assertTrue(
+                exception.getMessage().contains("Expected LineString"),
                 "Exception message should mention expected geometry type");
     }
 
     @Test
     public void testCorruptWKB() {
         // Random garbage bytes that cannot form a valid WKB structure
-        byte[] garbage = new byte[]{0x05, 0x05, 0x05, 0x05};
+        byte[] garbage = new byte[] {0x05, 0x05, 0x05, 0x05};
 
         assertThrows(IllegalArgumentException.class, () -> {
             WKBGeometryDecoder.decodeLineString(garbage);
@@ -87,6 +89,7 @@ public class WKBGeometryDecoderTest {
     @Test
     public void testNullOrEmptyInput() {
         assertThrows(IllegalArgumentException.class, () -> WKBGeometryDecoder.decodeLineString(null));
-        assertThrows(IllegalArgumentException.class, () -> WKBGeometryDecoder.decodeLineString(new byte[0]));
+        assertThrows(
+                IllegalArgumentException.class, () -> WKBGeometryDecoder.decodeLineString(new byte[0]));
     }
 }

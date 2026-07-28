@@ -41,7 +41,7 @@ class OvertureCarAccessParserTest {
     void testStandardRoad_NoRestrictions_Allowed() {
         when(properties.getAccessRestrictions()).thenReturn(Collections.emptyList());
 
-        OvertureCarAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureCarAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, true);
     }
@@ -50,7 +50,7 @@ class OvertureCarAccessParserTest {
     void testStandardRoad_EmptyRestrictions_Allowed() {
         when(properties.getAccessRestrictions()).thenReturn(List.of());
 
-        OvertureCarAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureCarAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, true);
     }
@@ -61,7 +61,7 @@ class OvertureCarAccessParserTest {
                 createRestriction(TravelMode.CAR, AccessType.DENIED, null);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureCarAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureCarAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, false, false);
     }
@@ -72,7 +72,7 @@ class OvertureCarAccessParserTest {
                 createRestriction(TravelMode.CAR, AccessType.DENIED, TravelHeading.FORWARD);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureCarAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureCarAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, false, true);
     }
@@ -83,7 +83,7 @@ class OvertureCarAccessParserTest {
                 createRestriction(TravelMode.CAR, AccessType.DENIED, TravelHeading.BACKWARD);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureCarAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureCarAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, false);
     }
@@ -94,7 +94,7 @@ class OvertureCarAccessParserTest {
                 createRestriction(TravelMode.VEHICLE, AccessType.DENIED, null);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureCarAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureCarAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, false, false);
     }
@@ -105,7 +105,7 @@ class OvertureCarAccessParserTest {
                 createRestriction(TravelMode.MOTOR_VEHICLE, AccessType.DENIED, null);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureCarAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureCarAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, false, false);
     }
@@ -117,7 +117,7 @@ class OvertureCarAccessParserTest {
 
         when(properties.getAccessRestrictions()).thenReturn(List.of(bwdRestriction));
 
-        OvertureCarAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureCarAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, false);
     }

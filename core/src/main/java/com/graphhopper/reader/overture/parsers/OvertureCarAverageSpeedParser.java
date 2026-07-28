@@ -18,12 +18,15 @@ import java.util.Set;
  * to ensure realistic routing costs.
  * </p>
  */
-public final class OvertureCarAverageSpeedParser {
-    private OvertureCarAverageSpeedParser() {}
+public final class OvertureCarAverageSpeedParser implements OvertureTagParser {
 
     // This value determines the maximal possible on roads with bad surfaces (30 km/h)
     private static final int BAD_SURFACE_SPEED = 30;
     private static final int DEFAULT_SPEED = 20;
+    /** Average speed is assumed to run slightly below the posted limit. */
+    private static final double POSTED_LIMIT_FACTOR = 0.9;
+    /** Ceiling for the stored value, keeping it inside the encoded value's range. */
+    private static final double MAX_STORABLE_SPEED = 127;
 
     private static final Set<RoadSurfaceType> BAD_SURFACES = EnumSet.of(
             RoadSurfaceType.UNPAVED,
@@ -31,28 +34,72 @@ public final class OvertureCarAverageSpeedParser {
             RoadSurfaceType.DIRT,
             RoadSurfaceType.PAVING_STONES);
 
+    private final DecimalEncodedValue speedEnc;
+    private final DecimalEncodedValue maxSpeedEnc;
+
     /**
-     * Calculates and sets the average car speed for the edge.
-     * @param edge the GraphHopper edge to update
-     * @param segment the Overture road segment metadata
      * @param speedEnc the encoded value for car speed
+     * @param maxSpeedEnc the encoded value holding the posted limit, written earlier in the import
      */
-    public static void parseSpeed(
-            EdgeIteratorState edge, OvertureRoadSegment segment, DecimalEncodedValue speedEnc) {
-        double baseSpeed = getBaseSpeed(segment);
-        baseSpeed = applySurfaceSpeed(segment, baseSpeed);
-        edge.set(speedEnc, baseSpeed, baseSpeed);
+    public OvertureCarAverageSpeedParser(
+            DecimalEncodedValue speedEnc, DecimalEncodedValue maxSpeedEnc) {
+        this.speedEnc = speedEnc;
+        this.maxSpeedEnc = maxSpeedEnc;
     }
 
     /**
-     * Determines base speed using the hierarchy: MaxSpeed > Link Defaults > Class Defaults.
+     * Calculates and sets the average car speed for the edge, per direction.
+     *
+     * <p>The posted limit is read back from {@code maxSpeedEnc} rather than re-derived from the
+     * segment, so the average speed can never disagree with the {@code max_speed} encoded value.
+     * This requires {@link OvertureMaxSpeedParser} to have already run on this edge.
+     *
+     * @param edge the GraphHopper edge to update
+     * @param segment the Overture road segment metadata
+     * @param context unused; the posted limit is read off the edge, not from the context
+     */
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
+        double forward = speedFor(segment, edge.get(maxSpeedEnc));
+        double backward = speedFor(
+                segment,
+                maxSpeedEnc.isStoreTwoDirections() ? edge.getReverse(maxSpeedEnc) : edge.get(maxSpeedEnc));
+
+        if (speedEnc.isStoreTwoDirections()) {
+            edge.set(speedEnc, forward, backward);
+        } else {
+            edge.set(speedEnc, Math.min(forward, backward));
+        }
+    }
+
+    /**
+     * Applies the surface cap and storage ceiling to the base speed for one direction.
+     *
      * @param segment the Overture road segment
+     * @param postedLimitKmh the posted limit for this direction, or {@link Double#POSITIVE_INFINITY}
+     *     when none is known
+     * @return the average speed in km/h
+     */
+    private static double speedFor(OvertureRoadSegment segment, double postedLimitKmh) {
+        double speed = getBaseSpeed(segment, postedLimitKmh);
+        speed = applySurfaceSpeed(segment, speed);
+        return Math.min(speed, MAX_STORABLE_SPEED);
+    }
+
+    /**
+     * Determines base speed using the hierarchy: posted limit > Link Defaults > Class Defaults.
+     *
+     * @param segment the Overture road segment
+     * @param postedLimitKmh the posted limit for the direction being computed, or {@link
+     *     Double#POSITIVE_INFINITY} when none is known
      * @return the base speed limit in km/h
      */
-    private static double getBaseSpeed(OvertureRoadSegment segment) {
-        Double explicitMaxSpeed = segment.getMaxSpeed();
-        if (explicitMaxSpeed != null) {
-            return explicitMaxSpeed * 0.9;
+    private static double getBaseSpeed(OvertureRoadSegment segment, double postedLimitKmh) {
+        // MaxSpeed.MAXSPEED_MISSING is positive infinity, so an unknown limit falls through to the
+        // road-class defaults rather than producing an absurd speed.
+        if (!Double.isInfinite(postedLimitKmh) && postedLimitKmh > 0) {
+            return postedLimitKmh * POSTED_LIMIT_FACTOR;
         }
 
         OvertureRoadClass roadClass = segment.getProperties().getRoadClass();

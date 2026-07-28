@@ -28,8 +28,8 @@ public class NamesExtractor {
             return null;
         }
 
-        Map<Bcp47LanguageTag, String> common =
-                SegmentFeature.COMMON.parseMap(segmentJson, Bcp47LanguageTag::parse, JsonNode::asText, featureId);
+        Map<Bcp47LanguageTag, String> common = SegmentFeature.COMMON.parseMap(
+                segmentJson, Bcp47LanguageTag::parse, JsonNode::asText, featureId);
 
         List<OvertureNameRule> rules =
                 SegmentFeature.RULES.parseList(segmentJson, NameRuleExtractor::extractNameRule, featureId);

@@ -14,8 +14,17 @@ import com.graphhopper.util.EdgeIteratorState;
  * using {@link OvertureRoadSubclass}, then falls back to the primary road class.
  * </p>
  */
-public final class OvertureRoadClassParser {
-    private OvertureRoadClassParser() {}
+public final class OvertureRoadClassParser implements OvertureTagParser {
+
+    private final EnumEncodedValue<RoadClass> roadClassEnc;
+
+    /**
+     * @param roadClassEnc the encoded value representing road class
+     */
+    public OvertureRoadClassParser(EnumEncodedValue<RoadClass> roadClassEnc) {
+        this.roadClassEnc = roadClassEnc;
+    }
+
     /**
      * Maps Overture road classification to GraphHopper {@link RoadClass}.
      * Subclass refinements take precedence over the general road class.
@@ -38,17 +47,15 @@ public final class OvertureRoadClassParser {
     }
 
     /**
-     * Parses {@code RoadClass} from the road segment and
-     * applies it to the given graph edge
+     * Parses {@code RoadClass} from the road segment and applies it to the given graph edge.
      *
-     * @param edge      the graph edge to update
-     * @param segment   the Overture road segment
-     * @param roadClassEnc the encoded value representing road class
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; road class comes entirely from the segment
      */
-    public static void parseRoadClass(
-            EdgeIteratorState edge,
-            OvertureRoadSegment segment,
-            EnumEncodedValue<RoadClass> roadClassEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         OvertureRoadClass overtureRoadClass = segment.getProperties().getRoadClass();
         OvertureRoadSubclass overtureRoadSubclass = segment.getProperties().getSubclass();
 

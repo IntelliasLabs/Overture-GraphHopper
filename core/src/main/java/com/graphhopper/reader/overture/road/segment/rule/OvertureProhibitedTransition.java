@@ -4,7 +4,6 @@ import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import com.graphhopper.reader.overture.access.restriction.PropertyScopeContainer;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
 import com.graphhopper.reader.overture.road.segment.HasBetweenProperty;
-
 import java.util.List;
 import java.util.Objects;
 

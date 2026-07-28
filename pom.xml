@@ -203,6 +203,17 @@
                         <ratchetFrom>origin/master</ratchetFrom>
 
                         <java>
+                            <!-- Only the code this fork owns. Upstream is not formatted in this
+                                 style, so formatting a file the fork merely touched rewrites it whole
+                                 and turns every upstream merge into a conflict. -->
+                            <includes>
+                                <include>src/main/java/com/graphhopper/reader/overture/**/*.java</include>
+                                <include>src/test/java/com/graphhopper/reader/overture/**/*.java</include>
+                                <include>src/main/java/com/graphhopper/reader/DataReader*.java</include>
+                                <include>src/main/java/com/graphhopper/reader/osm/OsmSupport.java</include>
+                                <include>src/main/java/com/graphhopper/reader/osm/OsmParsersFactory.java</include>
+                            </includes>
+
                             <palantirJavaFormat>
                                 <version>2.50.0</version>
                                 <style>GOOGLE</style>

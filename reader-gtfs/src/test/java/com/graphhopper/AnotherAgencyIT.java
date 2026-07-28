@@ -26,7 +26,7 @@ import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.TranslationMap;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,7 @@ public interface AnotherAgencyIT<T extends PtRouter> {
 
     ZoneId zoneId = ZoneId.of("America/Los_Angeles");
 
-    DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     class TripBasedPtRouterTest implements AnotherAgencyIT<PtRouterTripBasedImpl> {
 

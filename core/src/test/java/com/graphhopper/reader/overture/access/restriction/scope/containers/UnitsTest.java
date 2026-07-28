@@ -1,8 +1,8 @@
 package com.graphhopper.reader.overture.access.restriction.scope.containers;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link Units} conversion helpers.

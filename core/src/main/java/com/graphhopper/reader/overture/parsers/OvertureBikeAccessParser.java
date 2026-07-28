@@ -1,13 +1,11 @@
 package com.graphhopper.reader.overture.parsers;
 
-import com.graphhopper.reader.overture.access.restriction.OvertureAccessRestriction;
+import com.graphhopper.reader.overture.access.restriction.scope.OvertureScopes;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadClass;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
 import com.graphhopper.routing.ev.BooleanEncodedValue;
 import com.graphhopper.util.EdgeIteratorState;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Parses bicycle access restrictions from Overture road segment data and
@@ -21,18 +19,27 @@ import java.util.List;
  *       directions using {@link TravelHeading} and {@link OvertureAccessParser#isAccessAllowed}.</li>
  * </ul>
  */
-public final class OvertureBikeAccessParser {
-    private OvertureBikeAccessParser() {}
+public final class OvertureBikeAccessParser implements OvertureTagParser {
+
+    private final BooleanEncodedValue accessEnc;
+
+    /**
+     * @param accessEnc the encoded value representing bicycle access
+     */
+    public OvertureBikeAccessParser(BooleanEncodedValue accessEnc) {
+        this.accessEnc = accessEnc;
+    }
 
     /**
      * Determines bicycle access for the given road segment and applies it to the edge.
      *
-     * @param edge      the graph edge to update
-     * @param segment   the Overture road segment
-     * @param accessEnc the encoded value representing bicycle access
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; access comes entirely from the segment's restrictions
      */
-    public static void parseAccess(
-            EdgeIteratorState edge, OvertureRoadSegment segment, BooleanEncodedValue accessEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         var properties = segment.getProperties();
 
         if (properties.getRoadClass() == OvertureRoadClass.MOTORWAY) {
@@ -47,22 +54,10 @@ public final class OvertureBikeAccessParser {
             return;
         }
 
-        List<OvertureAccessRestriction> fwdRules = new ArrayList<>();
-        List<OvertureAccessRestriction> bwdRules = new ArrayList<>();
+        var byHeading = OvertureScopes.byHeading(accessRestrictions, OvertureScopes::headingOf);
 
-        for (OvertureAccessRestriction r : accessRestrictions) {
-            if (!r.hasWhen() || r.getWhen().getHeading() == null) {
-                fwdRules.add(r);
-                bwdRules.add(r);
-            } else if (r.getWhen().getHeading() == TravelHeading.FORWARD) {
-                fwdRules.add(r);
-            } else if (r.getWhen().getHeading() == TravelHeading.BACKWARD) {
-                bwdRules.add(r);
-            }
-        }
-
-        boolean canFwd = OvertureAccessParser.isAccessAllowed(fwdRules, "bicycle");
-        boolean canBwd = OvertureAccessParser.isAccessAllowed(bwdRules, "bicycle");
+        boolean canFwd = OvertureAccessParser.isAccessAllowed(byHeading.forward(), "bicycle");
+        boolean canBwd = OvertureAccessParser.isAccessAllowed(byHeading.backward(), "bicycle");
 
         edge.set(accessEnc, canFwd, canBwd);
     }

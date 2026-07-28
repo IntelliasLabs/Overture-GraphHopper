@@ -3,9 +3,8 @@ package com.graphhopper.reader.overture.common.speed;
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import com.graphhopper.reader.overture.access.restriction.PropertyScopeContainer;
 import com.graphhopper.reader.overture.road.segment.HasBetweenProperty;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents speed limit data extracted from the Overture Maps schema.

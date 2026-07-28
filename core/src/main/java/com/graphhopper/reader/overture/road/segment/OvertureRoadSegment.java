@@ -1,11 +1,9 @@
 package com.graphhopper.reader.overture.road.segment;
 
-import com.graphhopper.reader.overture.access.restriction.AccessType;
-import com.graphhopper.reader.overture.access.restriction.OvertureAccessRestriction;
-import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelMode;
 import com.graphhopper.reader.overture.common.speed.OvertureSpeedLimit;
 import com.graphhopper.reader.overture.names.Bcp47LanguageTag;
 import com.graphhopper.reader.overture.names.OvertureNameRule;
+import com.graphhopper.reader.overture.parsers.OvertureAccessParser;
 import com.graphhopper.reader.overture.road.flags.OvertureRoadFlags;
 import com.graphhopper.reader.overture.road.surface.OvertureRoadSurface;
 import com.graphhopper.util.DistanceCalcEarth;
@@ -110,49 +108,33 @@ public class OvertureRoadSegment {
     /**
      * Checks whether this road segment is accessible for cars.
      * <p>
-     * The segment is considered accessible if it is not abandoned or under construction
-     * and there is no access restriction that denies {@link TravelMode#CAR},
-     * {@link TravelMode#MOTOR_VEHICLE}, or {@link TravelMode#VEHICLE}.
-     * A denial without a {@code when} clause is treated as a global denial.
+     * The segment is considered accessible if it is not abandoned or under construction, its road
+     * class admits cars, and its access restrictions do not deny {@code car}, {@code motor_vehicle}
+     * or {@code vehicle}. A denial without a {@code when} clause is treated as a global denial.
      * If no restrictions are present, the road is accessible by default.
      * </p>
      *
      * @return {@code true} if the road is accessible for cars, {@code false} otherwise
+     * @see OvertureAccessParser#isAccessAllowed(List, String)
      */
     public boolean isAccessible() {
         if (properties == null) return true;
         if (properties.getFlags() != null
-                && properties.getFlags().stream().anyMatch(OvertureRoadFlags::shouldSkip)
+                        && properties.getFlags().stream().anyMatch(OvertureRoadFlags::shouldSkip)
                 || properties.getRoadClass() != null && !properties.getRoadClass().isCarAccessible()) {
             return false;
         }
 
-        var restrictions = properties.getAccessRestrictions();
-        if (restrictions != null) {
-            for (OvertureAccessRestriction restriction : restrictions) {
-                if (restriction.getAccessType() == AccessType.DENIED) {
-                    if (!restriction.hasWhen()) return false;
-                    var restrictedModes = restriction.getWhen().getMode();
-                    if (containsCarRelatedMode(restrictedModes)) return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Evaluates whether the provided list of travel modes contains any modes
-     * that would restrict a typical passenger car.
-     * @param restrictedModes the list of travel modes to check; may be {@code null}.
-     * @return {@code true} if the list contains {@code VEHICLE}, {@code MOTOR_VEHICLE},
-     * or {@code CAR}, {@code false} otherwise.
-     */
-    private boolean containsCarRelatedMode(List<TravelMode> restrictedModes) {
-        return restrictedModes != null
-                && restrictedModes.stream()
-                        .anyMatch(mode -> mode == TravelMode.VEHICLE
-                                || mode == TravelMode.MOTOR_VEHICLE
-                                || mode == TravelMode.CAR);
+        // Restriction evaluation lives in OvertureAccessParser so that cars, bicycles and pedestrians
+        // share one implementation. This method previously duplicated the rule, and the two copies
+        // disagreed: this one handled a denial with no `when` clause correctly while the parser
+        // skipped it, leaving bicycles and pedestrians routed through unconditionally closed roads.
+        //
+        // "Either direction" is the right question here because this is a coarse gate over the
+        // unsplit restriction list. Overture encodes a oneway as a denial scoped to one heading, so
+        // asking whether the segment is closed outright would shut every oneway in both directions.
+        return OvertureAccessParser.isAccessAllowedEitherDirection(
+                properties.getAccessRestrictions(), "car");
     }
 
     /**

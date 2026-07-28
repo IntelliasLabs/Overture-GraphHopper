@@ -2,7 +2,6 @@ package com.graphhopper.reader.overture.road.surface;
 
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import com.graphhopper.reader.overture.road.segment.HasBetweenProperty;
-
 import java.util.Objects;
 
 /**
@@ -47,7 +46,7 @@ public class OvertureRoadSurface implements HasBetweenProperty {
      *
      * @return {@code true} if {@link #getSurfaceType()} is non-{@code null}, {@code false} otherwise
      */
-    public boolean hasSurfaceType(){
+    public boolean hasSurfaceType() {
         return surfaceType != null;
     }
 
@@ -56,10 +55,9 @@ public class OvertureRoadSurface implements HasBetweenProperty {
      *
      * @return {@code true} if {@link #getBetween()} is non-{@code null}, {@code false} otherwise
      */
-    public boolean hasBetween(){
+    public boolean hasBetween() {
         return between != null;
     }
-
 
     /**
      * Returns the linearly referenced range this surface applies to.
@@ -79,7 +77,7 @@ public class OvertureRoadSurface implements HasBetweenProperty {
      *
      * @return {@code true} if the surface is paved, {@code false} otherwise
      */
-    public boolean isPaved(){
+    public boolean isPaved() {
         return surfaceType == RoadSurfaceType.PAVED
                 || surfaceType == RoadSurfaceType.ASPHALT
                 || surfaceType == RoadSurfaceType.CONCRETE
@@ -95,7 +93,7 @@ public class OvertureRoadSurface implements HasBetweenProperty {
      *
      * @return {@code true} if the surface is unpaved, {@code false} otherwise
      */
-    public boolean isUnpaved(){
+    public boolean isUnpaved() {
         return surfaceType == RoadSurfaceType.UNPAVED
                 || surfaceType == RoadSurfaceType.GRAVEL
                 || surfaceType == RoadSurfaceType.DIRT;
@@ -119,9 +117,6 @@ public class OvertureRoadSurface implements HasBetweenProperty {
      */
     @Override
     public String toString() {
-        return "OvertureRoadSurface{" +
-                "surfaceType=" + surfaceType +
-                ", between=" + between +
-                '}';
+        return "OvertureRoadSurface{" + "surfaceType=" + surfaceType + ", between=" + between + '}';
     }
 }

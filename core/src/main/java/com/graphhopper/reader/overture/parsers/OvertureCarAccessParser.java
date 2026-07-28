@@ -1,12 +1,10 @@
 package com.graphhopper.reader.overture.parsers;
 
-import com.graphhopper.reader.overture.access.restriction.OvertureAccessRestriction;
+import com.graphhopper.reader.overture.access.restriction.scope.OvertureScopes;
 import com.graphhopper.reader.overture.access.restriction.scope.containers.TravelHeading;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
 import com.graphhopper.routing.ev.BooleanEncodedValue;
 import com.graphhopper.util.EdgeIteratorState;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Parses car access restrictions from Overture road segment data and
@@ -19,17 +17,27 @@ import java.util.List;
  *       directions using {@link TravelHeading} and {@link OvertureAccessParser#isAccessAllowed}.</li>
  * </ul>
  */
-public final class OvertureCarAccessParser {
-    private OvertureCarAccessParser() {}
+public final class OvertureCarAccessParser implements OvertureTagParser {
+
+    private final BooleanEncodedValue accessEnc;
+
+    /**
+     * @param accessEnc the encoded value representing car access
+     */
+    public OvertureCarAccessParser(BooleanEncodedValue accessEnc) {
+        this.accessEnc = accessEnc;
+    }
+
     /**
      * Determines car access for the given road segment and applies it to the edge.
      *
-     * @param edge      the graph edge to update
-     * @param segment   the Overture road segment
-     * @param accessEnc the encoded value representing car access
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; access comes entirely from the segment's restrictions
      */
-    public static void parseAccess(
-            EdgeIteratorState edge, OvertureRoadSegment segment, BooleanEncodedValue accessEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         var properties = segment.getProperties();
 
         if (!segment.isAccessible()) {
@@ -44,22 +52,10 @@ public final class OvertureCarAccessParser {
             return;
         }
 
-        List<OvertureAccessRestriction> fwdRules = new ArrayList<>(3);
-        List<OvertureAccessRestriction> bwdRules = new ArrayList<>(3);
+        var byHeading = OvertureScopes.byHeading(restrictions, OvertureScopes::headingOf);
 
-        for (OvertureAccessRestriction r : restrictions) {
-            if (!r.hasWhen() || r.getWhen().getHeading() == null) {
-                fwdRules.add(r);
-                bwdRules.add(r);
-            } else if (r.getWhen().getHeading() == TravelHeading.FORWARD) {
-                fwdRules.add(r);
-            } else if (r.getWhen().getHeading() == TravelHeading.BACKWARD) {
-                bwdRules.add(r);
-            }
-        }
-
-        boolean canFwd = OvertureAccessParser.isAccessAllowed(fwdRules, "car");
-        boolean canBwd = OvertureAccessParser.isAccessAllowed(bwdRules, "car");
+        boolean canFwd = OvertureAccessParser.isAccessAllowed(byHeading.forward(), "car");
+        boolean canBwd = OvertureAccessParser.isAccessAllowed(byHeading.backward(), "car");
 
         edge.set(accessEnc, canFwd, canBwd);
     }

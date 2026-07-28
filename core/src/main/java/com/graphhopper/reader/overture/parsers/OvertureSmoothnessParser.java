@@ -11,8 +11,17 @@ import com.graphhopper.util.EdgeIteratorState;
  * Infers road smoothness based on the Overture road surface type.
  * This parser maps physical surface characteristics to expected driving quality.
  */
-public final class OvertureSmoothnessParser {
-    private OvertureSmoothnessParser() {}
+public final class OvertureSmoothnessParser implements OvertureTagParser {
+
+    private final EnumEncodedValue<Smoothness> smoothnessEnc;
+
+    /**
+     * @param smoothnessEnc the encoded value representing smoothness
+     */
+    public OvertureSmoothnessParser(EnumEncodedValue<Smoothness> smoothnessEnc) {
+        this.smoothnessEnc = smoothnessEnc;
+    }
+
     /**
      * Parses smoothness from the segment data.
      * @param segment the Overture road segment
@@ -45,17 +54,15 @@ public final class OvertureSmoothnessParser {
     }
 
     /**
-     * Parses {@code Smoothness} from the road segment and
-     * applies it to the given graph edge
+     * Parses {@code Smoothness} from the road segment and applies it to the given graph edge.
      *
-     * @param edge      the graph edge to update
-     * @param segment   the Overture road segment
-     * @param smoothnessEnc the encoded value representing smoothness
+     * @param edge the graph edge to update
+     * @param segment the Overture road segment
+     * @param context unused; smoothness is inferred entirely from the segment
      */
-    public static void parseSmoothness(
-            EdgeIteratorState edge,
-            OvertureRoadSegment segment,
-            EnumEncodedValue<Smoothness> smoothnessEnc) {
+    @Override
+    public void handleSegment(
+            EdgeIteratorState edge, OvertureRoadSegment segment, OvertureSegmentContext context) {
         Smoothness smoothness = parse(segment);
         edge.set(smoothnessEnc, smoothness);
     }

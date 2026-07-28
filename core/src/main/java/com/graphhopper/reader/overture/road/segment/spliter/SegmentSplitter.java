@@ -1,13 +1,12 @@
 package com.graphhopper.reader.overture.road.segment.spliter;
 
-import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
+import static com.graphhopper.reader.overture.road.segment.spliter.SubSegmentProcessor.getPropertiesBetween;
+import static com.graphhopper.reader.overture.road.segment.spliter.SubSegmentProcessor.getSubLineString;
 
+import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.ArrayList;
-
-import static com.graphhopper.reader.overture.road.segment.spliter.SubSegmentProcessor.getSubLineString;
-import static com.graphhopper.reader.overture.road.segment.spliter.SubSegmentProcessor.getPropertiesBetween;
 
 /**
  * Provides functionality to divide an {@link OvertureRoadSegment} into multiple subsegments
@@ -46,16 +45,13 @@ public final class SegmentSplitter {
      * @param endLr end linearly-referenced position
      * @return subSegment in corresponding range
      */
-    public static OvertureRoadSegment processSubSegment(OvertureRoadSegment segment,
-                                                        double startLr, double endLr) {
-        if (segment == null)
-            return null;
+    public static OvertureRoadSegment processSubSegment(
+            OvertureRoadSegment segment, double startLr, double endLr) {
+        if (segment == null) return null;
 
         return new OvertureRoadSegment(
                 segment.getId(),
                 getSubLineString(segment.getLineString(), startLr, endLr),
-                getPropertiesBetween(segment.getProperties(), startLr, endLr)
-        );
+                getPropertiesBetween(segment.getProperties(), startLr, endLr));
     }
-
 }

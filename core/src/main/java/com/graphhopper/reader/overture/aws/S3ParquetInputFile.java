@@ -1,10 +1,9 @@
 package com.graphhopper.reader.overture.aws;
 
+import java.io.IOException;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.SeekableInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
-
-import java.io.IOException;
 
 /**
  * An implementation of the Parquet {@link InputFile} interface that reads directly from AWS S3.
@@ -34,7 +33,7 @@ public class S3ParquetInputFile implements InputFile {
      * @param length   the size of File.
      * @throws IOException if the file size cannot be retrieved (e.g., network error, file not found).
      */
-    public S3ParquetInputFile(S3Client s3Client, String bucket, String key, long length){
+    public S3ParquetInputFile(S3Client s3Client, String bucket, String key, long length) {
         this.s3Client = s3Client;
         this.bucket = bucket;
         this.key = key;

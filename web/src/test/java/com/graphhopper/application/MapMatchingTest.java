@@ -29,7 +29,7 @@ import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.*;
 import com.graphhopper.util.shapes.GHPoint;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,7 @@ public class MapMatchingTest {
 
     private static final String GH_LOCATION = "../target/mapmatchingtest-ch";
     private final XmlMapper xmlMapper = new XmlMapper();
-    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     private static GraphHopper graphHopper;
 

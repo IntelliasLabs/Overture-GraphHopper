@@ -1,9 +1,9 @@
 package com.graphhopper.reader.overture.road.surface;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.graphhopper.reader.overture.LinearlyReferencedRange;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link OvertureRoadSurface} covering constructor behavior, accessors,

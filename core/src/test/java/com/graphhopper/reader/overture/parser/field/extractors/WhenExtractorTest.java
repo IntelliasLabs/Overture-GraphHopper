@@ -78,7 +78,8 @@ public class WhenExtractorTest {
         assertNotNull(when.getMode());
 
         String jsonWithNull = "{\"mode\": [\"bus\", null]}";
-        PropertyScopeContainer whenNull = WhenExtractor.extractWhen(mapper.readTree(jsonWithNull), "UNKNOWN");
+        PropertyScopeContainer whenNull =
+                WhenExtractor.extractWhen(mapper.readTree(jsonWithNull), "UNKNOWN");
         assertEquals(1, whenNull.getMode().size());
     }
 

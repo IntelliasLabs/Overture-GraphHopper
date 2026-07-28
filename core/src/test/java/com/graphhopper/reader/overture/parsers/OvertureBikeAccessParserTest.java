@@ -40,7 +40,7 @@ class OvertureBikeAccessParserTest {
     void testStandardRoad_NoRestrictions_Allowed() {
         when(properties.getAccessRestrictions()).thenReturn(null);
 
-        OvertureBikeAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureBikeAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, true);
     }
@@ -49,7 +49,7 @@ class OvertureBikeAccessParserTest {
     void testStandardRoad_EmptyRestrictions_Allowed() {
         when(properties.getAccessRestrictions()).thenReturn(List.of());
 
-        OvertureBikeAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureBikeAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, true);
     }
@@ -59,7 +59,7 @@ class OvertureBikeAccessParserTest {
         when(properties.getRoadClass()).thenReturn(OvertureRoadClass.MOTORWAY);
         when(properties.getAccessRestrictions()).thenReturn(null);
 
-        OvertureBikeAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureBikeAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, false, false);
     }
@@ -70,7 +70,7 @@ class OvertureBikeAccessParserTest {
                 createRestriction(TravelMode.BICYCLE, AccessType.DENIED, null);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureBikeAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureBikeAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, false, false);
     }
@@ -81,7 +81,7 @@ class OvertureBikeAccessParserTest {
                 createRestriction(TravelMode.BICYCLE, AccessType.DENIED, TravelHeading.FORWARD);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureBikeAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureBikeAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, false, true);
     }
@@ -92,7 +92,7 @@ class OvertureBikeAccessParserTest {
                 createRestriction(TravelMode.BICYCLE, AccessType.DENIED, TravelHeading.BACKWARD);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureBikeAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureBikeAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, false);
     }
@@ -103,7 +103,7 @@ class OvertureBikeAccessParserTest {
                 createRestriction(TravelMode.VEHICLE, AccessType.DENIED, null);
         when(properties.getAccessRestrictions()).thenReturn(List.of(restriction));
 
-        OvertureBikeAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureBikeAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, false, false);
     }
@@ -115,7 +115,7 @@ class OvertureBikeAccessParserTest {
 
         when(properties.getAccessRestrictions()).thenReturn(List.of(bwdRestriction));
 
-        OvertureBikeAccessParser.parseAccess(edge, segment, accessEnc);
+        new OvertureBikeAccessParser(accessEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(accessEnc, true, false);
     }

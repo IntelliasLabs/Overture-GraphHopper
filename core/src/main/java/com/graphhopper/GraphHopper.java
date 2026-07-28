@@ -29,8 +29,11 @@ import com.graphhopper.config.LMProfile;
 import com.graphhopper.config.Profile;
 import com.graphhopper.jackson.Jackson;
 import com.graphhopper.reader.DataReader;
+import com.graphhopper.reader.DataReaderConfig;
+import com.graphhopper.reader.DataReaderContext;
+import com.graphhopper.reader.DataReaderInitializer;
 import com.graphhopper.reader.dem.*;
-import com.graphhopper.reader.osm.RestrictionTagParser;
+import com.graphhopper.reader.osm.OsmSupport;
 import com.graphhopper.routing.*;
 import com.graphhopper.routing.ch.CHPreparationHandler;
 import com.graphhopper.routing.ch.PrepareContractionHierarchies;
@@ -43,9 +46,6 @@ import com.graphhopper.routing.subnetwork.EdgeBasedTarjanSCC;
 import com.graphhopper.routing.subnetwork.PrepareRoutingSubnetworks;
 import com.graphhopper.routing.subnetwork.PrepareRoutingSubnetworks.PrepareJob;
 import com.graphhopper.routing.util.*;
-import com.graphhopper.routing.util.parsers.OSMBikeNetworkTagParser;
-import com.graphhopper.routing.util.parsers.OSMFootNetworkTagParser;
-import com.graphhopper.routing.util.parsers.TagParser;
 import com.graphhopper.routing.weighting.Weighting;
 import com.graphhopper.routing.weighting.custom.CustomModelParser;
 import com.graphhopper.routing.weighting.custom.CustomWeighting;
@@ -59,7 +59,6 @@ import com.graphhopper.util.Parameters.Routing;
 import com.graphhopper.util.details.PathDetailsBuilderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.graphhopper.reader.DataReaderInitializer;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -69,7 +68,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -99,7 +97,6 @@ public class GraphHopper {
     private BaseGraph baseGraph;
     private StorableProperties properties;
     protected EncodingManager encodingManager;
-    private OSMParsers osmParsers;
     private int defaultSegmentSize = AbstractDataAccess.SEGMENT_SIZE_DEFAULT;
     private String ghLocation = "";
     private DAType dataAccessDefaultType = DAType.RAM;
@@ -111,7 +108,7 @@ public class GraphHopper {
     private LockFactory lockFactory = new NativeFSLockFactory();
     private boolean readOnly = false;
     private boolean fullyLoaded = false;
-    private final OSMReaderConfig osmReaderConfig = new OSMReaderConfig();
+    private final DataReaderConfig dataReaderConfig = new DataReaderConfig();
     // for routing
     private final RouterConfig routerConfig = new RouterConfig();
     // for index
@@ -143,6 +140,15 @@ public class GraphHopper {
 
     private String dateRangeParserString = "";
     private String encodedValuesString = "";
+    /**
+     * What gets handed to the chosen data reader, assembled by {@link #prepareImport()}.
+     *
+     * <p>Built there rather than in {@link #importData()} because that is where the encoded-value
+     * declarations exist: they are local to that method, and capturing them here is what keeps them from
+     * having to become fields of this class. Everything else it exposes is read through this instance
+     * lazily, so a context built before {@link #baseGraph} exists still answers correctly once it does.
+     */
+    private DataReaderContext dataReaderContext;
 
     public GraphHopper setEncodedValuesString(String encodedValuesString) {
         this.encodedValuesString = encodedValuesString;
@@ -157,12 +163,6 @@ public class GraphHopper {
         if (encodingManager == null)
             throw new IllegalStateException("EncodingManager not yet built");
         return encodingManager;
-    }
-
-    public OSMParsers getOSMParsers() {
-        if (osmParsers == null)
-            throw new IllegalStateException("OSMParsers not yet built");
-        return osmParsers;
     }
 
     public ElevationProvider getElevationProvider() {
@@ -550,16 +550,16 @@ public class GraphHopper {
         // elevation
         if (ghConfig.has("graph.elevation.smoothing"))
             throw new IllegalArgumentException("Use 'graph.elevation.edge_smoothing: moving_average' or the new 'graph.elevation.edge_smoothing: ramer'. See #2634.");
-        osmReaderConfig.setElevationSmoothing(ghConfig.getString("graph.elevation.edge_smoothing", osmReaderConfig.getElevationSmoothing()));
-        osmReaderConfig.setSmoothElevationAverageWindowSize(ghConfig.getDouble("graph.elevation.edge_smoothing.moving_average.window_size", osmReaderConfig.getSmoothElevationAverageWindowSize()));
-        osmReaderConfig.setElevationSmoothingRamerMax(ghConfig.getInt("graph.elevation.edge_smoothing.ramer.max_elevation", osmReaderConfig.getElevationSmoothingRamerMax()));
-        osmReaderConfig.setLongEdgeSamplingDistance(ghConfig.getDouble("graph.elevation.long_edge_sampling_distance", osmReaderConfig.getLongEdgeSamplingDistance()));
-        osmReaderConfig.setElevationMaxWayPointDistance(ghConfig.getDouble("graph.elevation.way_point_max_distance", osmReaderConfig.getElevationMaxWayPointDistance()));
+        dataReaderConfig.setElevationSmoothing(ghConfig.getString("graph.elevation.edge_smoothing", dataReaderConfig.getElevationSmoothing()));
+        dataReaderConfig.setSmoothElevationAverageWindowSize(ghConfig.getDouble("graph.elevation.edge_smoothing.moving_average.window_size", dataReaderConfig.getSmoothElevationAverageWindowSize()));
+        dataReaderConfig.setElevationSmoothingRamerMax(ghConfig.getInt("graph.elevation.edge_smoothing.ramer.max_elevation", dataReaderConfig.getElevationSmoothingRamerMax()));
+        dataReaderConfig.setLongEdgeSamplingDistance(ghConfig.getDouble("graph.elevation.long_edge_sampling_distance", dataReaderConfig.getLongEdgeSamplingDistance()));
+        dataReaderConfig.setElevationMaxWayPointDistance(ghConfig.getDouble("graph.elevation.way_point_max_distance", dataReaderConfig.getElevationMaxWayPointDistance()));
         routerConfig.setElevationWayPointMaxDistance(ghConfig.getDouble("graph.elevation.way_point_max_distance", routerConfig.getElevationWayPointMaxDistance()));
         ElevationProvider elevationProvider = createElevationProvider(ghConfig);
         setElevationProvider(elevationProvider);
 
-        if (osmReaderConfig.getLongEdgeSamplingDistance() < Double.MAX_VALUE && !elevationProvider.canInterpolate())
+        if (dataReaderConfig.getLongEdgeSamplingDistance() < Double.MAX_VALUE && !elevationProvider.canInterpolate())
             logger.warn("Long edge sampling enabled, but bilinear interpolation disabled. See #1953");
 
         // optimizable prepare
@@ -581,12 +581,12 @@ public class GraphHopper {
         if ((ignoredHighwaysString.contains("cycleway") || ignoredHighwaysString.contains("path")) && ghConfig.getProfiles().stream().map(Profile::getName).anyMatch(p -> p.contains("mtb") || p.contains("bike")))
             throw new IllegalArgumentException("You should not use import.osm.ignored_highways=cycleway or =path in conjunction with bicycle profiles. This is probably an error in your configuration");
 
-        osmReaderConfig.setIgnoredHighways(Arrays.stream(ghConfig.getString("import.osm.ignored_highways", String.join(",", osmReaderConfig.getIgnoredHighways()))
+        dataReaderConfig.setIgnoredHighways(Arrays.stream(ghConfig.getString("import.osm.ignored_highways", String.join(",", dataReaderConfig.getIgnoredHighways()))
                 .split(",")).map(String::trim).collect(Collectors.toList()));
-        osmReaderConfig.setParseWayNames(ghConfig.getBool("datareader.instructions", osmReaderConfig.isParseWayNames()));
-        osmReaderConfig.setPreferredLanguage(ghConfig.getString("datareader.preferred_language", osmReaderConfig.getPreferredLanguage()));
-        osmReaderConfig.setMaxWayPointDistance(ghConfig.getDouble(Routing.INIT_WAY_POINT_MAX_DISTANCE, osmReaderConfig.getMaxWayPointDistance()));
-        osmReaderConfig.setWorkerThreads(ghConfig.getInt("datareader.worker_threads", osmReaderConfig.getWorkerThreads()));
+        dataReaderConfig.setParseWayNames(ghConfig.getBool("datareader.instructions", dataReaderConfig.isParseWayNames()));
+        dataReaderConfig.setPreferredLanguage(ghConfig.getString("datareader.preferred_language", dataReaderConfig.getPreferredLanguage()));
+        dataReaderConfig.setMaxWayPointDistance(ghConfig.getDouble(Routing.INIT_WAY_POINT_MAX_DISTANCE, dataReaderConfig.getMaxWayPointDistance()));
+        dataReaderConfig.setWorkerThreads(ghConfig.getInt("datareader.worker_threads", dataReaderConfig.getWorkerThreads()));
 
         // index
         preciseIndexResolution = ghConfig.getInt("index.high_resolution", preciseIndexResolution);
@@ -649,46 +649,6 @@ public class GraphHopper {
         return Collections.emptyList();
     }
 
-    protected OSMParsers buildOSMParsers(Map<String, PMap> encodedValuesWithProps,
-                                         Map<String, ImportUnit> activeImportUnits,
-                                         Map<String, List<String>> restrictionVehicleTypesByProfile,
-                                         List<String> ignoredHighways) {
-        ImportUnitSorter sorter = new ImportUnitSorter(activeImportUnits);
-        Map<String, ImportUnit> sortedImportUnits = new LinkedHashMap<>();
-        sorter.sort().forEach(name -> sortedImportUnits.put(name, activeImportUnits.get(name)));
-        List<TagParser> sortedParsers = new ArrayList<>();
-        sortedImportUnits.forEach((name, importUnit) -> {
-            BiFunction<EncodedValueLookup, PMap, TagParser> createTagParser = importUnit.getCreateTagParser();
-            if (createTagParser != null) {
-                PMap pmap = encodedValuesWithProps.getOrDefault(name, new PMap());
-                if (!pmap.has("date_range_parser_day"))
-                    pmap.putObject("date_range_parser_day", dateRangeParserString);
-                sortedParsers.add(createTagParser.apply(encodingManager, pmap));
-            }
-        });
-
-        OSMParsers osmParsers = new OSMParsers();
-        ignoredHighways.forEach(osmParsers::addIgnoredHighway);
-        sortedParsers.forEach(osmParsers::addWayTagParser);
-
-        if (maxSpeedCalculator != null) {
-            maxSpeedCalculator.checkEncodedValues(encodingManager);
-            osmParsers.addWayTagParser(maxSpeedCalculator.getParser());
-        }
-
-        if (encodingManager.hasEncodedValue(BikeNetwork.KEY))
-            osmParsers.addRelationTagParser(relConfig -> new OSMBikeNetworkTagParser(encodingManager.getEnumEncodedValue(BikeNetwork.KEY, RouteNetwork.class), relConfig, "bicycle"));
-        if (encodingManager.hasEncodedValue(MtbNetwork.KEY))
-            osmParsers.addRelationTagParser(relConfig -> new OSMBikeNetworkTagParser(encodingManager.getEnumEncodedValue(MtbNetwork.KEY, RouteNetwork.class), relConfig, "mtb"));
-        if (encodingManager.hasEncodedValue(FootNetwork.KEY))
-            osmParsers.addRelationTagParser(relConfig -> new OSMFootNetworkTagParser(encodingManager.getEnumEncodedValue(FootNetwork.KEY, RouteNetwork.class), relConfig));
-
-        restrictionVehicleTypesByProfile.forEach((profile, restrictionVehicleTypes) -> {
-            osmParsers.addRestrictionTagParser(new RestrictionTagParser(
-                    restrictionVehicleTypes, encodingManager.getTurnBooleanEncodedValue(TurnRestriction.key(profile))));
-        });
-        return osmParsers;
-    }
 
     public static Map<String, PMap> parseEncodedValueString(String encodedValuesStr) {
         Map<String, PMap> encodedValuesWithProps = new LinkedHashMap<>();
@@ -921,7 +881,12 @@ public class GraphHopper {
                 deque.addAll(importUnit.getRequiredImportUnits());
         }
         encodingManager = buildEncodingManager(encodedValuesWithProps, activeImportUnits, restrictionVehicleTypesByProfile);
-        osmParsers = buildOSMParsers(encodedValuesWithProps, activeImportUnits, restrictionVehicleTypesByProfile, osmReaderConfig.getIgnoredHighways());
+        // The declarations above are the inputs a reader needs to assemble its own parsers. They are
+        // captured into the reader context here, while still in scope, so this class does not have to
+        // hold them as fields: the parser pipeline belongs to whichever reader is used, and so does
+        // knowledge of what it is built from.
+        dataReaderContext = createDataReaderContext(
+                encodedValuesWithProps, activeImportUnits, restrictionVehicleTypesByProfile);
     }
 
     protected void postImportData() {
@@ -1048,6 +1013,14 @@ public class GraphHopper {
         if (dataFile == null && dataReaderInitializer == null)
             throw new IllegalStateException(
                     "No data source specified. You must provide either a file or a DataReader.");
+        if (dataReaderContext == null)
+            throw new IllegalStateException("The reader context must be created in `prepareImport()`");
+        // A caller that only set a data file still gets an import: setDataFile/setOSMFile is upstream's
+        // API and has always meant OSM. Other sources are selected explicitly through
+        // setDataReaderInitializer, which GraphHopperManaged does from datareader.file. Kept local so
+        // an import never silently rewrites how the next one resolves its reader.
+        DataReaderInitializer initializer =
+                dataReaderInitializer == null ? OsmSupport::create : dataReaderInitializer;
 
         List<CustomArea> customAreas = readCountries();
         if (isEmpty(customAreasDirectory)) {
@@ -1065,13 +1038,14 @@ public class GraphHopper {
         } else {
             logger.info("start creating graph from DataReader");
         }
-        DataReader reader = dataReaderInitializer
-                .initializeDataReader(baseGraph.getBaseGraph(), osmParsers, osmReaderConfig)
+        // The source is not applied here: the initializer reads it off the context and configures the
+        // reader with it. Only the initializer knows what the configured string means for its reader -
+        // Overture resolves s3:// to a bucket and key, which has no File form at all - and a reader
+        // that arrives fully configured is never briefly in a state where readGraph would fail.
+        DataReader reader = initializer
+                .initializeDataReader(dataReaderContext)
                 .setAreaIndex(areaIndex)
                 .setElevationProvider(eleProvider);
-        if (dataFile != null) {
-            reader.setFile(_getDataFile());
-        }
         logger.info("using " + getBaseGraphString() + ", memory:" + getMemInfo());
 
         createBaseGraphAndProperties();
@@ -1085,6 +1059,78 @@ public class GraphHopper {
         properties.put("datareader.import.date", f.format(new Date()));
         if (reader.getDataDate() != null)
             properties.put("datareader.data.date", f.format(reader.getDataDate()));
+    }
+
+    /**
+     * Builds the context handed to the configured {@link DataReaderInitializer}.
+     *
+     * <p>It carries only source-agnostic inputs: this engine no longer assembles any particular source's
+     * parsers, so a reader that needs them builds its own from the declarations here.
+     *
+     * <p>The declarations are parameters rather than fields because they exist only as locals of {@link
+     * #prepareImport()}. Everything else is read from this instance when asked, so the returned context
+     * may be built before the graph exists.
+     *
+     * @param encodedValuesWithProps per-encoded-value options, keyed by encoded-value name
+     * @param activeImportUnits the transitive import-unit closure for this import
+     * @param restrictionVehicleTypesByProfile turn-restriction vehicle types per profile
+     * @return the context for this import
+     */
+    protected DataReaderContext createDataReaderContext(
+            Map<String, PMap> encodedValuesWithProps,
+            Map<String, ImportUnit> activeImportUnits,
+            Map<String, List<String>> restrictionVehicleTypesByProfile) {
+        return new DataReaderContext() {
+            @Override
+            public BaseGraph getBaseGraph() {
+                return baseGraph.getBaseGraph();
+            }
+
+            @Override
+            public String getSource() {
+                return dataFile;
+            }
+
+            @Override
+            public File getSourceFile() {
+                return dataFile == null ? null : _getDataFile();
+            }
+
+            @Override
+            public EncodingManager getEncodingManager() {
+                return encodingManager;
+            }
+
+            @Override
+            public DataReaderConfig getConfig() {
+                return dataReaderConfig;
+            }
+
+            @Override
+            public Map<String, PMap> getEncodedValuesWithProps() {
+                return encodedValuesWithProps;
+            }
+
+            @Override
+            public Map<String, ImportUnit> getActiveImportUnits() {
+                return activeImportUnits;
+            }
+
+            @Override
+            public Map<String, List<String>> getRestrictionVehicleTypesByProfile() {
+                return restrictionVehicleTypesByProfile;
+            }
+
+            @Override
+            public String getDateRangeParserString() {
+                return dateRangeParserString;
+            }
+
+            @Override
+            public MaxSpeedCalculator getMaxSpeedCalculator() {
+                return maxSpeedCalculator;
+            }
+        };
     }
 
     protected void createBaseGraphAndProperties() {
@@ -1726,8 +1772,8 @@ public class GraphHopper {
         return routerConfig;
     }
 
-    public OSMReaderConfig getReaderConfig() {
-        return osmReaderConfig;
+    public DataReaderConfig getReaderConfig() {
+        return dataReaderConfig;
     }
 
     public static JsonFeatureCollection resolveCustomAreas(String customAreasDirectory) {

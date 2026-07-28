@@ -26,7 +26,7 @@ import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.TranslationMap;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ public class ExtendedRouteTypeIT {
     private static PtRouter ptRouter;
     private static final ZoneId zoneId = ZoneId.of("America/Los_Angeles");
     private static GraphHopperGtfs graphHopperGtfs;
-    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static final DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     @BeforeAll
     public static void init() {

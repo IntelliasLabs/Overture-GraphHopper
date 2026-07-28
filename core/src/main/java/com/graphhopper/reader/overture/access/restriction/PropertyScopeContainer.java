@@ -1,11 +1,10 @@
 package com.graphhopper.reader.overture.access.restriction;
 
-import com.graphhopper.reader.overture.access.restriction.scope.containers.*;
+import static java.util.Collections.emptyList;
 
+import com.graphhopper.reader.overture.access.restriction.scope.containers.*;
 import java.util.List;
 import java.util.Objects;
-
-import static java.util.Collections.emptyList;
 
 /**
  * Container for optional properties that further qualify an {@link OvertureAccessRestriction}.
@@ -179,7 +178,9 @@ public class PropertyScopeContainer {
      * @return {@code true} if {@code using} is not empty
      */
     public boolean hasUsing() {
-        return !using.isEmpty();
+        // the list fields are nullable: the primary constructor stores what it is given while the
+        // shorter overloads substitute emptyList(), so null and empty both mean "no constraint"
+        return using != null && !using.isEmpty();
     }
 
     /**
@@ -188,7 +189,7 @@ public class PropertyScopeContainer {
      * @return {@code true} if {@code recognized} is not empty
      */
     public boolean hasRecognized() {
-        return !recognized.isEmpty();
+        return recognized != null && !recognized.isEmpty();
     }
 
     /**
@@ -197,7 +198,7 @@ public class PropertyScopeContainer {
      * @return {@code true} if {@code mode} is not empty
      */
     public boolean hasMode() {
-        return !mode.isEmpty();
+        return mode != null && !mode.isEmpty();
     }
 
     /**
@@ -206,7 +207,7 @@ public class PropertyScopeContainer {
      * @return {@code true} if {@code vehicle} is not empty
      */
     public boolean hasVehicle() {
-        return !vehicle.isEmpty();
+        return vehicle != null && !vehicle.isEmpty();
     }
 
     // --------------------------------------------------------------------------
@@ -338,8 +339,7 @@ public class PropertyScopeContainer {
      * @return a new {@link PropertyScopeContainer} with only {@code recognized} set
      */
     public static PropertyScopeContainer ofRecognized(List<RecognizedStatus> recognized) {
-        return new PropertyScopeContainer(null, null,
-                emptyList(), recognized);
+        return new PropertyScopeContainer(null, null, emptyList(), recognized);
     }
 
     /**
@@ -349,8 +349,7 @@ public class PropertyScopeContainer {
      * @return a new {@link PropertyScopeContainer} with only {@code mode} set
      */
     public static PropertyScopeContainer ofMode(List<TravelMode> mode) {
-        return new PropertyScopeContainer(null, null, emptyList(),
-                emptyList(), mode);
+        return new PropertyScopeContainer(null, null, emptyList(), emptyList(), mode);
     }
 
     /**
@@ -360,15 +359,19 @@ public class PropertyScopeContainer {
      * @return a new {@link PropertyScopeContainer} with only {@code vehicle} set
      */
     public static PropertyScopeContainer ofVehicle(List<VehicleAttributes> vehicle) {
-        return new PropertyScopeContainer(null, null,
-                emptyList(), emptyList(), emptyList(), vehicle);
+        return new PropertyScopeContainer(null, null, emptyList(), emptyList(), emptyList(), vehicle);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         PropertyScopeContainer that = (PropertyScopeContainer) o;
-        return Objects.equals(during, that.during) && heading == that.heading && Objects.equals(using, that.using) && Objects.equals(recognized, that.recognized) && Objects.equals(mode, that.mode) && Objects.equals(vehicle, that.vehicle);
+        return Objects.equals(during, that.during)
+                && heading == that.heading
+                && Objects.equals(using, that.using)
+                && Objects.equals(recognized, that.recognized)
+                && Objects.equals(mode, that.mode)
+                && Objects.equals(vehicle, that.vehicle);
     }
 
     @Override
@@ -386,5 +389,4 @@ public class PropertyScopeContainer {
                 + mode + ", vehicle="
                 + vehicle + '}';
     }
-
 }

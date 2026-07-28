@@ -1,6 +1,7 @@
 package com.graphhopper.reader.overture.parser.field.extractors;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.graphhopper.reader.overture.parser.features.SegmentFeature;
 
 /**
  * Extractor for {@code version} data from Overture features.
@@ -16,7 +17,8 @@ public class VersionExtractor {
      * @return the integer version value, or {@code 0} if missing
      */
     public static int extractVersion(JsonNode segmentJson) {
-        return 0;
+        Integer version = SegmentFeature.VERSION.parseInteger(segmentJson, null);
+        return version == null ? 0 : version;
     }
     /**
      * Checks for the presence of the {@code version} property.
@@ -25,6 +27,7 @@ public class VersionExtractor {
      * @return {@code true} if the property exists and is not null
      */
     public static boolean versionExists(JsonNode segmentJson) {
-        return true;
+        JsonNode node = SegmentFeature.VERSION.getFeature(segmentJson, null);
+        return node != null && !node.isNull();
     }
 }

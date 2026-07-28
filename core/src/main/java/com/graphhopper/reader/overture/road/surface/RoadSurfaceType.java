@@ -31,14 +31,12 @@ public enum RoadSurfaceType {
      * or does not match any constant
      */
     public static RoadSurfaceType fromString(String surface) {
-      if(surface == null)
-          return null;
-      try{
-          return valueOf(surface.toUpperCase());
-      }
-      catch(IllegalArgumentException e){
-          return null;
-      }
+        if (surface == null) return null;
+        try {
+            return valueOf(surface.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /**

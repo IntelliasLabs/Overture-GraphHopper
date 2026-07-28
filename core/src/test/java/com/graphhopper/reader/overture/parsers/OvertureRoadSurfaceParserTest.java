@@ -33,7 +33,7 @@ public class OvertureRoadSurfaceParserTest {
         EdgeIteratorState edge = mock(EdgeIteratorState.class);
         EnumEncodedValue<Surface> surfaceEnc = new EnumEncodedValue<>("surface", Surface.class);
 
-        OvertureRoadSurfaceParser.parseSurface(edge, segment, surfaceEnc);
+        new OvertureRoadSurfaceParser(surfaceEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(surfaceEnc, Surface.PAVED);
     }
@@ -44,7 +44,7 @@ public class OvertureRoadSurfaceParserTest {
         EdgeIteratorState edge = mock(EdgeIteratorState.class);
         EnumEncodedValue<Surface> surfaceEnc = new EnumEncodedValue<>("surface", Surface.class);
 
-        OvertureRoadSurfaceParser.parseSurface(edge, segment, surfaceEnc);
+        new OvertureRoadSurfaceParser(surfaceEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(surfaceEnc, Surface.UNPAVED);
     }
@@ -55,30 +55,36 @@ public class OvertureRoadSurfaceParserTest {
         EdgeIteratorState edge = mock(EdgeIteratorState.class);
         EnumEncodedValue<Surface> surfaceEnc = new EnumEncodedValue<>("surface", Surface.class);
 
-        OvertureRoadSurfaceParser.parseSurface(edge, segment, surfaceEnc);
+        new OvertureRoadSurfaceParser(surfaceEnc).handleSegment(edge, segment, null);
 
         verify(edge).set(surfaceEnc, Surface.ASPHALT);
     }
 
+    /**
+     * An explicit {@code unknown} surface says nothing about the road, so it must not be reported as
+     * paved. Asserting PAVED made unsurveyed roads look better than they may be to any consumer that
+     * penalises unpaved surfaces.
+     */
     @Test
     public void parseSurfaceTest_UnknownSurface() {
         OvertureRoadSegment segment = mockSegmentWithRoadSurface(RoadSurfaceType.UNKNOWN);
         EdgeIteratorState edge = mock(EdgeIteratorState.class);
         EnumEncodedValue<Surface> surfaceEnc = new EnumEncodedValue<>("surface", Surface.class);
 
-        OvertureRoadSurfaceParser.parseSurface(edge, segment, surfaceEnc);
+        new OvertureRoadSurfaceParser(surfaceEnc).handleSegment(edge, segment, null);
 
-        verify(edge).set(surfaceEnc, Surface.PAVED);
+        verify(edge).set(surfaceEnc, Surface.MISSING);
     }
 
+    /** An absent surface is reported as missing rather than guessed. */
     @Test
     public void parseSurfaceTest_DefaultSurface() {
         OvertureRoadSegment segment = mockSegmentWithRoadSurface(null);
         EdgeIteratorState edge = mock(EdgeIteratorState.class);
         EnumEncodedValue<Surface> surfaceEnc = new EnumEncodedValue<>("surface", Surface.class);
 
-        OvertureRoadSurfaceParser.parseSurface(edge, segment, surfaceEnc);
+        new OvertureRoadSurfaceParser(surfaceEnc).handleSegment(edge, segment, null);
 
-        verify(edge).set(surfaceEnc, Surface.PAVED);
+        verify(edge).set(surfaceEnc, Surface.MISSING);
     }
 }

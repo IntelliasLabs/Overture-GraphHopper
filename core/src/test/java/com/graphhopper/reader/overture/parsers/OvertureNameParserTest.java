@@ -8,6 +8,9 @@ import com.graphhopper.reader.overture.names.OvertureNames;
 import com.graphhopper.reader.overture.names.Variant;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadProperties;
 import com.graphhopper.reader.overture.road.segment.OvertureRoadSegment;
+import com.graphhopper.routing.util.EncodingManager;
+import com.graphhopper.storage.BaseGraph;
+import com.graphhopper.util.EdgeIteratorState;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -80,6 +83,54 @@ class OvertureNameParserTest {
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testParseName_usesPrimaryNameWhenNoLanguagePreferred() {
+        Map<Bcp47LanguageTag, String> common = Map.of(Bcp47LanguageTag.parse("de"), "Hauptstraße");
+
+        assertEquals("Main Street", nameStoredFor(createSegment("Main Street", common, null), ""));
+    }
+
+    @Test
+    void testParseName_prefersCommonNameInRequestedLanguage() {
+        Map<Bcp47LanguageTag, String> common = Map.of(
+                Bcp47LanguageTag.parse("en"), "Main Street",
+                Bcp47LanguageTag.parse("de"), "Hauptstraße");
+
+        OvertureRoadSegment segment = createSegment("Головна вулиця", common, null);
+
+        assertEquals("Hauptstraße", nameStoredFor(segment, "de"));
+        assertEquals("Main Street", nameStoredFor(segment, "en"));
+    }
+
+    @Test
+    void testParseName_matchesOnLanguageSubtagOnly() {
+        // en-GB is still English, exactly as OSM's name:en would be preferred for
+        // preferred_language=en.
+        Map<Bcp47LanguageTag, String> common = Map.of(Bcp47LanguageTag.parse("en-GB"), "High Street");
+
+        assertEquals("High Street", nameStoredFor(createSegment("Hoofdstraat", common, null), "en"));
+    }
+
+    @Test
+    void testParseName_fallsBackToPrimaryNameWhenLanguageAbsent() {
+        Map<Bcp47LanguageTag, String> common = Map.of(Bcp47LanguageTag.parse("de"), "Hauptstraße");
+
+        assertEquals("Hoofdstraat", nameStoredFor(createSegment("Hoofdstraat", common, null), "fr"));
+    }
+
+    /** Runs the parser against a real edge and returns the street name it stored. */
+    private String nameStoredFor(OvertureRoadSegment segment, String preferredLanguage) {
+        EncodingManager em = new EncodingManager.Builder().build();
+        BaseGraph graph = new BaseGraph.Builder(em).create();
+        graph.getNodeAccess().setNode(0, 50.0, 30.0);
+        graph.getNodeAccess().setNode(1, 50.1, 30.1);
+        EdgeIteratorState edge = graph.edge(0, 1).setDistance(100);
+
+        new OvertureNameParser(preferredLanguage).handleSegment(edge, segment, null);
+
+        return edge.getName();
     }
 
     private OvertureRoadSegment createSegment(

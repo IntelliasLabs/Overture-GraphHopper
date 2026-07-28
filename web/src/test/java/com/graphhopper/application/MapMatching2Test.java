@@ -31,7 +31,7 @@ import com.graphhopper.storage.index.Snap;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.PMap;
 import com.graphhopper.reader.DataReaderInitializer;
-import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.osm.OsmSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MapMatching2Test {
     private static final String GH_LOCATION = "../target/mapmatchingtest2-gh";
     private final XmlMapper xmlMapper = new XmlMapper();
-    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+    private static DataReaderInitializer osmDataReaderInitializer = OsmSupport::create;
 
     @BeforeEach
     @AfterEach

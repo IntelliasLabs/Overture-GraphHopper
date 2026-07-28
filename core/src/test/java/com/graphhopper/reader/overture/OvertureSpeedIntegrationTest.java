@@ -95,12 +95,9 @@ public class OvertureSpeedIntegrationTest {
         customModel.setDistanceInfluence(0.0);
         gh.setProfiles(new Profile("car").setCustomModel(customModel));
 
-        gh.setDataReaderInitializer((baseGraph, osmParsers, config) -> {
-            com.graphhopper.reader.overture.OvertureReader reader =
-                    new com.graphhopper.reader.overture.OvertureReader(baseGraph);
-            reader.setEncodedValueLookup(gh.getEncodingManager());
-            return reader;
-        });
+        gh.setDataReaderInitializer(context -> new OvertureReader(context.getBaseGraph())
+                .setEncodedValueLookup(context.getEncodingManager())
+                .setFile(context.getSourceFile()));
     }
 
     @Test

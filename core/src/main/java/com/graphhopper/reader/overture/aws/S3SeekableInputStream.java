@@ -1,13 +1,12 @@
 package com.graphhopper.reader.overture.aws;
 
-import org.apache.parquet.io.SeekableInputStream;
-import org.jetbrains.annotations.NotNull;
-import software.amazon.awssdk.services.s3.S3Client;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import org.apache.parquet.io.SeekableInputStream;
+import org.jetbrains.annotations.NotNull;
+import software.amazon.awssdk.services.s3.S3Client;
 
 /**
  * A specialized {@link SeekableInputStream} that reads data directly from an AWS S3 object.
@@ -70,7 +69,6 @@ public class S3SeekableInputStream extends SeekableInputStream {
         this.position = newPos;
     }
 
-
     /**
      * Reads the next byte of data from the input stream.
      *
@@ -125,7 +123,8 @@ public class S3SeekableInputStream extends SeekableInputStream {
     @Override
     public int read(ByteBuffer byteBuffer) throws IOException {
         if (byteBuffer.hasArray()) {
-            int read = read(byteBuffer.array(),
+            int read = read(
+                    byteBuffer.array(),
                     byteBuffer.arrayOffset() + byteBuffer.position(),
                     byteBuffer.remaining());
             if (read > 0) byteBuffer.position(byteBuffer.position() + read);
@@ -148,7 +147,8 @@ public class S3SeekableInputStream extends SeekableInputStream {
     @Override
     public void readFully(ByteBuffer byteBuffer) throws IOException {
         if (byteBuffer.hasArray()) {
-            readFully(byteBuffer.array(),
+            readFully(
+                    byteBuffer.array(),
                     byteBuffer.arrayOffset() + byteBuffer.position(),
                     byteBuffer.remaining());
             byteBuffer.position(byteBuffer.limit());
@@ -180,10 +180,12 @@ public class S3SeekableInputStream extends SeekableInputStream {
 
         long endRange = Math.min(position + len - 1, contentLength - 1);
 
-        try (InputStream stream = OvertureS3Client.openRangeStream(client, bucket, key, position, endRange)) {
+        try (InputStream stream =
+                OvertureS3Client.openRangeStream(client, bucket, key, position, endRange)) {
             int totalRead = 0;
             int n;
-            while (totalRead < len && (n = stream.read(b, off + totalRead, len - totalRead)) != EOF_VALUE) {
+            while (totalRead < len
+                    && (n = stream.read(b, off + totalRead, len - totalRead)) != EOF_VALUE) {
                 totalRead += n;
             }
             if (totalRead > 0) position += totalRead;

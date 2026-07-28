@@ -11,6 +11,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.io.InputFile;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
