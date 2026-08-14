@@ -1,0 +1,112 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "4d4f7594-d82a-40d6-969b-9221c55584ee",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            24.0014608,
+            49.8441788
+          ],
+          [
+            24.0018551,
+            49.8441387
+          ]
+        ],
+        "bbox": [
+          24.0014608,
+          49.8441387,
+          24.0018551,
+          49.8441788
+        ]
+      },
+      "properties": {
+        "theme": "transportation",
+        "type": "segment",
+        "version": 2,
+        "subtype": "road",
+        "class": "residential",
+        "subclass": "sidewalk",
+        "sources": [
+          {
+            "property": "",
+            "dataset": "OpenStreetMap",
+            "license": "ODbL-1.0",
+            "record_id": "w176653280@21",
+            "update_time": "2025-10-29T16:06:07Z",
+            "confidence": null,
+            "between": null
+          }
+        ],
+        "names": {
+          "primary": "Seeburger Straße",
+          "common": {
+            "en": "Seeburger Straße"
+          },
+          "rules": [
+            {
+              "variant": "common",
+              "language": null,
+              "perspectives": null,
+              "value": "Seeburger Straße",
+              "between": null,
+              "side": null
+            }
+          ]
+        },
+        "connectors": [
+          {
+            "connector_id": "bd694bd5-e2da-45c6-b7f9-9d567f0633dc",
+            "at": 0.0
+          },
+          {
+            "connector_id": "413fa89a-d75b-422e-b3e1-c30e6b90f1a2",
+            "at": 1.0
+          }
+        ],
+        "routes": null,
+        "subclass_rules": null,
+        "access_restrictions": [
+          {
+            "access_type": "allowed"
+          }],
+        "level_rules": null,
+        "destinations": null,
+        "prohibited_transitions": null,
+        "road_surface": [
+          {
+            "value": "paved"
+          }
+        ],
+        "road_flags": [
+          {
+            "values": [
+              "is_bridge"
+            ],
+            "between": [
+              0.411363395,
+              0.448460268
+            ]
+          }
+        ],
+        "speed_limits": [
+          {
+            "max_speed": {
+              "value": 100,
+              "unit": "km/h"
+            },
+            "between": [
+              0.0,
+              0.931108858
+            ]
+          }
+        ],
+        "width_rules": null,
+        "rail_flags": null
+      }
+    }
+  ]
+}

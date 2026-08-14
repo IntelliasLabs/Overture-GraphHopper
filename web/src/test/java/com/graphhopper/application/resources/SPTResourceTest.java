@@ -26,6 +26,8 @@ import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.BodyAndStatus;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.TurnCostsConfig;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import org.junit.jupiter.api.AfterAll;
@@ -44,11 +46,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class SPTResourceTest {
     private static final String DIR = "./target/spt-gh/";
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
     private static final DropwizardAppExtension<GraphHopperServerConfiguration> app = new DropwizardAppExtension<>(GraphHopperApplication.class, createConfig());
 
     private static GraphHopperServerConfiguration createConfig() {
         GraphHopperServerTestConfiguration config = new GraphHopperServerTestConfiguration();
         config.getGraphHopperConfiguration().
+                setDataReaderInitializer(osmDataReaderInitializer).
                 putObject("graph.encoded_values", "max_speed,road_class").
                 putObject("datareader.file", "../core/files/andorra.osm.pbf").
                 putObject("import.osm.ignored_highways", "").

@@ -23,6 +23,8 @@ import com.graphhopper.application.GraphHopperServerConfiguration;
 import com.graphhopper.jackson.ResponsePathDeserializerHelper;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import org.junit.jupiter.api.AfterAll;
@@ -48,11 +50,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MapMatchingResourceTest {
 
     private static final String DIR = "../target/mapmatchingtest";
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
     public static final DropwizardAppExtension<GraphHopperServerConfiguration> app = new DropwizardAppExtension<>(GraphHopperApplication.class, createConfig());
 
     private static GraphHopperServerConfiguration createConfig() {
         GraphHopperServerConfiguration config = new GraphHopperServerConfiguration();
         config.getGraphHopperConfiguration().
+                setDataReaderInitializer(osmDataReaderInitializer).
                 putObject("datareader.file", "../map-matching/files/leipzig_germany.osm.pbf").
                 putObject("import.osm.ignored_highways", "").
                 putObject("graph.location", DIR).

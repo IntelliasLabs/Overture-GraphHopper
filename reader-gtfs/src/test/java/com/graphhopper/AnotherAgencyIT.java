@@ -25,6 +25,8 @@ import com.graphhopper.gtfs.Trips;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.TranslationMap;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -58,6 +60,8 @@ public interface AnotherAgencyIT<T extends PtRouter> {
 
     ZoneId zoneId = ZoneId.of("America/Los_Angeles");
 
+    DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+
     class TripBasedPtRouterTest implements AnotherAgencyIT<PtRouterTripBasedImpl> {
 
         private static GraphHopperGtfs graphHopperGtfs;
@@ -66,6 +70,7 @@ public interface AnotherAgencyIT<T extends PtRouter> {
         @BeforeAll
         static void init() {
             GraphHopperConfig ghConfig = new GraphHopperConfig();
+            ghConfig.setDataReaderInitializer(osmDataReaderInitializer);
             ghConfig.putObject("graph.location", GRAPH_LOC);
             ghConfig.putObject("import.osm.ignored_highways", "");
             ghConfig.putObject("datareader.file", "files/beatty.osm");
@@ -132,6 +137,7 @@ public interface AnotherAgencyIT<T extends PtRouter> {
         @BeforeAll
         static void init() {
             GraphHopperConfig ghConfig = new GraphHopperConfig();
+            ghConfig.setDataReaderInitializer(osmDataReaderInitializer);
             ghConfig.putObject("graph.location", GRAPH_LOC);
             ghConfig.putObject("import.osm.ignored_highways", "");
             ghConfig.putObject("datareader.file", "files/beatty.osm");

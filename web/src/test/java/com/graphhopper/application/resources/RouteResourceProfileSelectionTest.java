@@ -27,6 +27,8 @@ import com.graphhopper.config.LMProfile;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.BodyAndStatus;
 import com.graphhopper.util.Helper;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import org.junit.jupiter.api.AfterAll;
@@ -46,11 +48,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class RouteResourceProfileSelectionTest {
     private static final String DIR = "./target/route-resource-profile-selection-gh/";
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
     private static final DropwizardAppExtension<GraphHopperServerConfiguration> app = new DropwizardAppExtension<>(GraphHopperApplication.class, createConfig());
 
     private static GraphHopperServerConfiguration createConfig() {
         GraphHopperServerConfiguration config = new GraphHopperServerTestConfiguration();
         config.getGraphHopperConfiguration().
+                setDataReaderInitializer(osmDataReaderInitializer).
                 putObject("prepare.min_network_size", 0).
                 putObject("datareader.file", "../core/files/monaco.osm.gz").
                 putObject("graph.encoded_values", "road_class,surface,road_environment,max_speed").

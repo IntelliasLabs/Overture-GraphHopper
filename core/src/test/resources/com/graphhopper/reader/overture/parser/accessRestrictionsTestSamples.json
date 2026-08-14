@@ -1,0 +1,84 @@
+{
+  "single": {
+    "properties": {
+      "access_restrictions": [
+        {
+          "access_type": "denied",
+          "when": { "mode": ["car"] }
+        }
+      ]
+    }
+  },
+
+  "multiple": {
+    "properties": {
+      "access_restrictions": [
+        { "access_type": "allowed", "when": { "mode": ["foot"] } },
+        { "access_type": "denied", "when": { "mode": ["bicycle"] } }
+      ]
+    }
+  },
+
+  "modes": {
+    "properties": {
+      "access_restrictions": [
+        { "access_type": "denied", "when": { "mode": ["car", "foot", "bicycle"] } }
+      ]
+    }
+  },
+
+  "directional": {
+    "properties": {
+      "access_restrictions": [
+        { "access_type": "denied", "when": { "heading": "forward" } }
+      ]
+    }
+  },
+
+  "missing": {
+    "properties": { }
+  },
+
+  "with_between": {
+    "properties": {
+      "access_restrictions": [
+        {
+          "access_type": "denied",
+          "when": { "mode": ["car"] },
+          "between": { "start": 0.1, "end": 0.5 }
+        },
+        {
+          "access_type": "allowed",
+          "between": { "start": 0.0, "end": 1.0 }
+        }
+      ]
+    }
+  },
+
+  "mixed_entries": {
+    "properties": {
+      "access_restrictions": [
+        null,
+        {},
+        { "access_type": "denied" },
+        { "when": { "mode": ["foot"] } },
+        { "access_type": "allowed", "when": null },
+        { "access_type": "denied", "when": { "mode": [] } },
+        { "access_type": "denied", "when": { "mode": ["bus"] }, "between": { "start": 0.2, "end": 0.3 } },
+        { "access_type": "invalid_type", "when": { "mode": ["car"] } }
+      ]
+    }
+  },
+
+  "partial": {
+    "properties": {
+      "access_restrictions": [
+        { "access_type": "allowed", "when": { "mode": ["bicycle"] } },
+        { "access_type": null, "when": { "mode": ["car"] } },
+        { "access_type": "denied", "when": {} },
+        { "between": { "start": 0.3 } }
+      ]
+    }
+  }
+}
+

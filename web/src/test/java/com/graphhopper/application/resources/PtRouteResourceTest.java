@@ -24,6 +24,8 @@ import com.graphhopper.application.GraphHopperServerConfiguration;
 import com.graphhopper.application.util.GraphHopperServerTestConfiguration;
 import com.graphhopper.config.Profile;
 import com.graphhopper.gtfs.Request;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import com.graphhopper.resources.InfoResource;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.BodyAndStatus;
@@ -51,11 +53,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class PtRouteResourceTest {
     private static final String DIR = "./target/gtfs-app-gh/";
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
     public static final DropwizardAppExtension<GraphHopperServerConfiguration> app = new DropwizardAppExtension<>(GraphHopperApplication.class, createConfig());
 
     private static GraphHopperServerConfiguration createConfig() {
         GraphHopperServerConfiguration config = new GraphHopperServerTestConfiguration();
         config.getGraphHopperConfiguration().
+                setDataReaderInitializer(osmDataReaderInitializer).
                 putObject("datareader.file", "../reader-gtfs/files/beatty.osm").
                 putObject("gtfs.file", "../reader-gtfs/files/sample-feed").
                 putObject("graph.location", DIR).

@@ -25,6 +25,7 @@ import com.graphhopper.config.CHProfile;
 import com.graphhopper.config.LMProfile;
 import com.graphhopper.config.Profile;
 import com.graphhopper.util.PMap;
+import com.graphhopper.reader.DataReaderInitializer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,7 @@ public class GraphHopperConfig {
     private List<LMProfile> lmProfiles = new ArrayList<>();
     private List<String> copyrights = new ArrayList<>();
     private final PMap map;
+    private DataReaderInitializer dataReaderInitializer;
 
     public GraphHopperConfig() {
         this(new PMap());
@@ -100,6 +102,15 @@ public class GraphHopperConfig {
 
     public void setCopyrights(List<String> copyrights) {
         this.copyrights = copyrights;
+    }
+
+    public DataReaderInitializer getDataReaderInitializer() {
+        return dataReaderInitializer;
+    }
+
+    public GraphHopperConfig setDataReaderInitializer(DataReaderInitializer dataReaderInitializer) {
+        this.dataReaderInitializer = dataReaderInitializer;
+        return this;
     }
 
     // We can add explicit configuration properties to GraphHopperConfig (for example to allow lists or nested objects),

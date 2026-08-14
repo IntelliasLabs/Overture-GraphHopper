@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 public class GraphHopperManaged implements Managed {
 
-    private final static Logger logger = LoggerFactory.getLogger(GraphHopperManaged.class);
+    private static final Logger logger = LoggerFactory.getLogger(GraphHopperManaged.class);
     private final GraphHopper graphHopper;
 
     public GraphHopperManaged(GraphHopperConfig configuration) {
@@ -36,14 +36,48 @@ public class GraphHopperManaged implements Managed {
         } else {
             graphHopper = new GraphHopper();
         }
+
+        String dataReaderFile = configuration.getString("datareader.file", "");
+
+        graphHopper.setDataReaderInitializer((graph, parsers, readerConfig) -> {
+            if (dataReaderFile.startsWith("s3://")
+                    || dataReaderFile.endsWith(".parquet")
+                    || dataReaderFile.endsWith(".geojson")) {
+
+                logger.info(
+                        "Recognized Overture source (S3/Parquet/JSON): {}, using OvertureReader",
+                        dataReaderFile);
+
+                com.graphhopper.reader.overture.OvertureReader reader =
+                        new com.graphhopper.reader.overture.OvertureReader(graph);
+
+                reader.setEncodedValueLookup(graphHopper.getEncodingManager());
+
+                return reader;
+            } else if (dataReaderFile.endsWith(".pbf")
+                    || dataReaderFile.endsWith(".osm")
+                    || dataReaderFile.endsWith(".xml")
+                    || dataReaderFile.endsWith(".bz2")) {
+
+                logger.info("Using standard OSMReader for source: {}", dataReaderFile);
+                return new com.graphhopper.reader.osm.OSMReader(graph, parsers, readerConfig);
+
+            } else {
+                throw new IllegalArgumentException("Unsupported data format for file: " + dataReaderFile
+                        + ". Supported formats: .pbf, .osm, .parquet, .geojson or s3:// paths.");
+            }
+        });
+
         graphHopper.init(configuration);
     }
 
     @Override
     public void start() {
         graphHopper.importOrLoad();
-        logger.info("loaded graph at:{}, data_reader_file:{}, encoded values:{}, {} bytes for edge flags, {}",
-                graphHopper.getGraphHopperLocation(), graphHopper.getOSMFile(),
+        logger.info(
+                "loaded graph at:{}, data_reader_file:{}, encoded values:{}, {} bytes for edge flags, {}",
+                graphHopper.getGraphHopperLocation(),
+                graphHopper.getDataFile(),
                 graphHopper.getEncodingManager().toEncodedValuesAsString(),
                 graphHopper.getEncodingManager().getBytesForFlags(),
                 graphHopper.getBaseGraph().toDetailsString());
@@ -57,6 +91,4 @@ public class GraphHopperManaged implements Managed {
     public void stop() {
         graphHopper.close();
     }
-
-
 }

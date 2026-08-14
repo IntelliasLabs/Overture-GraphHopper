@@ -155,9 +155,9 @@ public class Measurement {
             }
 
             @Override
-            protected void importOSM() {
+            protected void importData() {
                 StopWatch sw = new StopWatch().start();
-                super.importOSM();
+                super.importData();
                 sw.stop();
                 put("graph.import_time", sw.getSeconds());
                 put("graph.import_time_ms", sw.getMillis());

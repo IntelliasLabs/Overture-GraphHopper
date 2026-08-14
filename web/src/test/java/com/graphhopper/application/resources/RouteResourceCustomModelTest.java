@@ -29,6 +29,8 @@ import com.graphhopper.util.BodyAndStatus;
 import com.graphhopper.util.GHUtility;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.TurnCostsConfig;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import org.junit.jupiter.api.AfterAll;
@@ -55,11 +57,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RouteResourceCustomModelTest {
 
     private static final String DIR = "./target/north-bayreuth-gh/";
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
     private static final DropwizardAppExtension<GraphHopperServerConfiguration> app = new DropwizardAppExtension<>(GraphHopperApplication.class, createConfig());
 
     private static GraphHopperServerConfiguration createConfig() {
         GraphHopperServerConfiguration config = new GraphHopperServerTestConfiguration();
         config.getGraphHopperConfiguration().
+                setDataReaderInitializer(osmDataReaderInitializer).
                 putObject("prepare.min_network_size", 200).
                 putObject("datareader.file", "../core/files/north-bayreuth.osm.gz").
                 putObject("graph.location", DIR).

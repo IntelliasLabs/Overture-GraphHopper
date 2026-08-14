@@ -9,6 +9,8 @@ import com.graphhopper.config.LMProfile;
 import com.graphhopper.config.Profile;
 import com.graphhopper.util.*;
 import com.graphhopper.util.shapes.GHPoint;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 
 import java.util.Locale;
 
@@ -17,6 +19,9 @@ import static com.graphhopper.json.Statement.Op.LIMIT;
 import static com.graphhopper.json.Statement.Op.MULTIPLY;
 
 public class RoutingExample {
+
+    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+
     public static void main(String[] args) {
         String relDir = args.length == 1 ? args[0] : "";
         GraphHopper hopper = createGraphHopperInstance(relDir + "core/files/andorra.osm.pbf");
@@ -31,7 +36,8 @@ public class RoutingExample {
 
     static GraphHopper createGraphHopperInstance(String ghLoc) {
         GraphHopper hopper = new GraphHopper();
-        hopper.setOSMFile(ghLoc);
+        hopper.setDataReaderInitializer(osmDataReaderInitializer);
+        hopper.setDataFile(ghLoc);
         // specify where to store graphhopper files
         hopper.setGraphHopperLocation("target/routing-graph-cache");
 
@@ -107,7 +113,8 @@ public class RoutingExample {
      */
     public static void customizableRouting(String ghLoc) {
         GraphHopper hopper = new GraphHopper();
-        hopper.setOSMFile(ghLoc);
+        hopper.setDataReaderInitializer(osmDataReaderInitializer);
+        hopper.setDataFile(ghLoc);
         hopper.setGraphHopperLocation("target/routing-custom-graph-cache");
         hopper.setEncodedValuesString("car_access, car_average_speed, road_access, road_environment, max_speed, ferry_speed");
         hopper.setProfiles(new Profile("car_custom").setCustomModel(GHUtility.loadCustomModelFromJar("car.json")));

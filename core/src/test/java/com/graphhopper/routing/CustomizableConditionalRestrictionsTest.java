@@ -9,6 +9,8 @@ import com.graphhopper.routing.ev.FootTemporalAccess;
 import com.graphhopper.util.CustomModel;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.details.PathDetail;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,8 @@ public class CustomizableConditionalRestrictionsTest {
 
     private static final String GH_LOCATION = "target/routing-conditional-access-gh";
 
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+
     @BeforeEach
     @AfterEach
     public void setup() {
@@ -34,6 +38,7 @@ public class CustomizableConditionalRestrictionsTest {
     @Test
     public void testConditionalAccess() {
         GraphHopper hopper = new GraphHopper().
+                setDataReaderInitializer(osmDataReaderInitializer).
                 setFileBacked(false).
                 setEncodedValuesString(FootTemporalAccess.KEY);
 

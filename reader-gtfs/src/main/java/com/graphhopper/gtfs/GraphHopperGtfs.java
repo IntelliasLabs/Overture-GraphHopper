@@ -58,9 +58,9 @@ public class GraphHopperGtfs extends GraphHopper {
     }
 
     @Override
-    protected void importOSM() {
+    protected void importData() {
         if (ghConfig.has("datareader.file")) {
-            super.importOSM();
+            super.importData();
         } else {
             createBaseGraphAndProperties();
         }

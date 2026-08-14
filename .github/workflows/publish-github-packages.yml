@@ -2,13 +2,10 @@ name: Publish to GitHub Packages
 
 # ignore tags as the untagged commit has the same GITHUB_SHA and would conflict
 on:
-  push:
-    branches:
-    - '**'
-
+  workflow_dispatch:
 jobs:
   publish:
-    if: github.repository_owner == 'graphhopper'
+    if: github.repository_owner == 'IntelliMapLab'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -43,7 +40,8 @@ jobs:
       - name: Build and publish package ${{ matrix.java-version }}
         # special 'wagon' option due to https://github.com/orgs/community/discussions/49001
         run: |
-          mvn -B versions:set -DnewVersion=$GITHUB_SHA -DgenerateBackupPoms=false
-          mvn -Dmaven.resolver.transport=wagon -B -DskipTests -Pskip-shaded-web-jar -Pskip-tools-jar source:jar deploy
+          mvn -B versions:set -DnewVersion=$GITHUB_SHA -DgenerateBackupPoms=false -s ci_settings.xml
+          mvn -B -DskipTests -Pskip-shaded-web-jar -Pskip-tools-jar source:jar deploy -s ci_settings.xml
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLAB_MAVEN_READ_TOKEN: ${{ secrets.GITLAB_MAVEN_READ_TOKEN }}
+          GITLAB_MAVEN_WRITE_TOKEN: ${{ secrets.GITLAB_MAVEN_WRITE_TOKEN }}

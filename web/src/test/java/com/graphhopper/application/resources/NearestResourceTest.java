@@ -23,6 +23,8 @@ import com.graphhopper.application.util.GraphHopperServerTestConfiguration;
 import com.graphhopper.resources.NearestResource;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import org.junit.jupiter.api.AfterAll;
@@ -42,11 +44,13 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class NearestResourceTest {
     private static final String dir = "./target/andorra-gh/";
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
     private static final DropwizardAppExtension<GraphHopperServerConfiguration> app = new DropwizardAppExtension<>(GraphHopperApplication.class, createConfig());
 
     private static GraphHopperServerConfiguration createConfig() {
         GraphHopperServerConfiguration config = new GraphHopperServerTestConfiguration();
         config.getGraphHopperConfiguration().
+                setDataReaderInitializer(osmDataReaderInitializer).
                 putObject("datareader.file", "../core/files/andorra.osm.pbf").
                 putObject("graph.location", dir).
                 putObject("import.osm.ignored_highways", "").

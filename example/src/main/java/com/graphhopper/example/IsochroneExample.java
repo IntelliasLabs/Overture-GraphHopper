@@ -47,7 +47,7 @@ public class IsochroneExample {
      */
     static GraphHopper createGraphHopperInstance(String ghLoc) {
         GraphHopper hopper = new GraphHopper();
-        hopper.setOSMFile(ghLoc);
+        hopper.setDataFile(ghLoc);
         hopper.setGraphHopperLocation("target/isochrone-graph-cache");
         hopper.setProfiles(new Profile("car").setCustomModel(GHUtility.loadCustomModelFromJar("car.json")));
         hopper.importOrLoad();

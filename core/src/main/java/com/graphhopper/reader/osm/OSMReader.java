@@ -20,9 +20,10 @@ package com.graphhopper.reader.osm;
 import com.carrotsearch.hppc.BitSet;
 import com.carrotsearch.hppc.LongArrayList;
 import com.graphhopper.coll.GHLongLongHashMap;
+import com.graphhopper.reader.DataReader;
+import com.graphhopper.reader.ReaderRelation;
 import com.graphhopper.reader.ReaderElement;
 import com.graphhopper.reader.ReaderNode;
-import com.graphhopper.reader.ReaderRelation;
 import com.graphhopper.reader.ReaderWay;
 import com.graphhopper.reader.dem.EdgeElevationSmoothingMovingAverage;
 import com.graphhopper.reader.dem.EdgeElevationSmoothingRamer;
@@ -53,7 +54,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.LongToIntFunction;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
 
 import static com.graphhopper.search.KVStorage.KValue;
 import static com.graphhopper.util.GHUtility.OSM_WARNING_LOGGER;
@@ -70,7 +71,7 @@ import static java.util.Collections.emptyList;
  * into several segments that are divided by intersections or barrier nodes. Each segment is added as an edge of the
  * resulting graph. Afterwards we scan the relations again to determine turn restrictions.
  **/
-public class OSMReader {
+public class OSMReader implements DataReader {
     private static final Logger LOGGER = LoggerFactory.getLogger(OSMReader.class);
 
     private static final Pattern WAY_NAME_PATTERN = Pattern.compile("; *");
@@ -117,6 +118,7 @@ public class OSMReader {
     /**
      * Sets the OSM file to be read.  Supported formats include .osm.xml, .osm.gz and .xml.pbf
      */
+    @Override
     public OSMReader setFile(File osmFile) {
         this.osmFile = osmFile;
         return this;
@@ -177,6 +179,7 @@ public class OSMReader {
     /**
      * @return the timestamp given in the OSM file header or null if not found
      */
+    @Override
     public Date getDataDate() {
         return osmDataDate;
     }
@@ -656,7 +659,7 @@ public class OSMReader {
         // we do not log exceptions with an empty message
         if (!e.isWithoutWarning()) {
             restrictionRelation.getTags().remove("graphhopper:via_node");
-            List<String> members = restrictionRelation.getMembers().stream().map(m -> m.getRole() + " " + m.getType().toString().toLowerCase() + " " + m.getRef()).collect(Collectors.toList());
+            List<String> members = restrictionRelation.getMembers().stream().map(m -> m.getRole() + " " + m.getType().toString().toLowerCase() + " " + m.getRef()).toList();
             OSM_WARNING_LOGGER.warn("Restriction relation " + restrictionRelation.getId() + " " + e.getMessage() + ". tags: " + restrictionRelation.getTags() + ", members: " + members + ". Relation ignored.");
         }
     }

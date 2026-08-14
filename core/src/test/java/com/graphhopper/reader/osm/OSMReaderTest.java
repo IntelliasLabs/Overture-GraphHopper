@@ -39,6 +39,7 @@ import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.storage.index.Snap;
 import com.graphhopper.util.*;
 import com.graphhopper.util.details.PathDetail;
+import com.graphhopper.reader.DataReaderInitializer;
 import com.graphhopper.util.shapes.GHPoint3D;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,6 +77,8 @@ public class OSMReaderTest {
     private EdgeExplorer carOutExplorer;
     private EdgeExplorer carAllExplorer;
 
+    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
+
     @BeforeEach
     public void setUp() {
         new File(dir).mkdirs();
@@ -88,7 +91,9 @@ public class OSMReaderTest {
 
     @Test
     public void testMain() {
-        GraphHopper hopper = new GraphHopperFacade(file1).importOrLoad();
+        GraphHopper hopper = new GraphHopperFacade(file1)
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .importOrLoad();
         BaseGraph graph = hopper.getBaseGraph();
         StorableProperties properties = hopper.getProperties();
 
@@ -151,6 +156,7 @@ public class OSMReaderTest {
     @Test
     public void testOneWay() {
         GraphHopper hopper = new GraphHopperFacade(file2)
+                .setDataReaderInitializer(osmDataReaderInitializer)
                 .setMinNetworkSize(0)
                 .importOrLoad();
         BaseGraph graph = hopper.getBaseGraph();
@@ -205,7 +211,9 @@ public class OSMReaderTest {
             @Override
             public void cleanUp() {
             }
-        }.importOrLoad();
+        }
+        .setDataReaderInitializer(osmDataReaderInitializer)
+        .importOrLoad();
         Graph graph = hopper.getBaseGraph();
 
         int n40 = AbstractGraphStorageTester.getIdOf(graph, 54.0);
@@ -235,7 +243,7 @@ public class OSMReaderTest {
                         addToSpeed(If("road_environment == FERRY", LIMIT, "ferry_speed")).
                         addToSpeed(Else(LIMIT, "car_average_speed"))));
             }
-        }.importOrLoad();
+        }.setDataReaderInitializer(osmDataReaderInitializer).importOrLoad();
 
         GHResponse rsp = hopper.route(new GHRequest(55.0, 10.2, 54.0, 10.1).
                 setProfile("car").
@@ -257,7 +265,9 @@ public class OSMReaderTest {
             @Override
             public void cleanUp() {
             }
-        }.importOrLoad();
+        }
+        .setDataReaderInitializer(osmDataReaderInitializer)
+        .importOrLoad();
         Graph graph = hopper.getBaseGraph();
 
         int n60 = AbstractGraphStorageTester.getIdOf(graph, 56.0);
@@ -268,7 +278,9 @@ public class OSMReaderTest {
 
     @Test
     public void testWayReferencesNotExistingAdjNode_issue19() {
-        GraphHopper hopper = new GraphHopperFacade(file4).importOrLoad();
+        GraphHopper hopper = new GraphHopperFacade(file4)
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .importOrLoad();
         Graph graph = hopper.getBaseGraph();
 
         assertEquals(2, graph.getNodes());
@@ -282,7 +294,10 @@ public class OSMReaderTest {
 
     @Test
     public void testDoNotRejectEdgeIfFirstNodeIsMissing_issue2221() {
-        GraphHopper hopper = new GraphHopperFacade("test-osm9.xml").setSortGraph(false).importOrLoad();
+        GraphHopper hopper = new GraphHopperFacade("test-osm9.xml")
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .setSortGraph(false)
+                .importOrLoad();
         BaseGraph graph = hopper.getBaseGraph();
         assertEquals(2, graph.getNodes());
         assertEquals(1, graph.getEdges());
@@ -302,7 +317,10 @@ public class OSMReaderTest {
 
     @Test
     public void test_edgeDistanceWhenFirstNodeIsMissing_issue2221() {
-        GraphHopper hopper = new GraphHopperFacade("test-osm10.xml").setSortGraph(false).importOrLoad();
+        GraphHopper hopper = new GraphHopperFacade("test-osm10.xml")
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .setSortGraph(false)
+                .importOrLoad();
         BaseGraph graph = hopper.getBaseGraph();
         assertEquals(3, graph.getNodes());
         assertEquals(3, graph.getEdges());
@@ -318,6 +336,7 @@ public class OSMReaderTest {
     @Test
     public void testFoot() {
         GraphHopper hopper = new GraphHopperFacade(file3)
+                .setDataReaderInitializer(osmDataReaderInitializer)
                 .setMinNetworkSize(0)
                 .importOrLoad();
         Graph graph = hopper.getBaseGraph();
@@ -343,7 +362,9 @@ public class OSMReaderTest {
     public void testNegativeIds() {
         String fileNegIds = "test-osm-negative-ids.xml";
         Exception exception = assertThrows(RuntimeException.class, () -> {
-            new GraphHopperFacade(fileNegIds).importOrLoad();
+            new GraphHopperFacade(fileNegIds)
+                    .setDataReaderInitializer(osmDataReaderInitializer)
+                    .importOrLoad();
         });
         assertTrue(exception.getCause().getMessage().contains("Invalid OSM NODE Id: -10;"));
     }
@@ -351,6 +372,7 @@ public class OSMReaderTest {
     @Test
     public void testBarriers() {
         GraphHopper hopper = new GraphHopperFacade(fileBarriers).
+                setDataReaderInitializer(osmDataReaderInitializer).
                 setSortGraph(false).
                 setMinNetworkSize(0).
                 importOrLoad();
@@ -391,6 +413,7 @@ public class OSMReaderTest {
     @Test
     public void testBarrierBetweenWays() {
         GraphHopper hopper = new GraphHopperFacade("test-barriers2.xml").
+                setDataReaderInitializer(osmDataReaderInitializer).
                 setMinNetworkSize(0).
                 importOrLoad();
 
@@ -415,7 +438,9 @@ public class OSMReaderTest {
         //     C - D
         //      \ /
         //   A - B - E
-        GraphHopper hopper = new GraphHopperFacade("test-avoid-loops.xml").importOrLoad();
+        GraphHopper hopper = new GraphHopperFacade("test-avoid-loops.xml")
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .importOrLoad();
         checkLoop(hopper);
     }
 
@@ -438,20 +463,27 @@ public class OSMReaderTest {
 
     @Test
     public void avoidsLoopEdgesIdenticalLatLon_1533() {
-        checkLoop(new GraphHopperFacade("test-avoid-loops2.xml").importOrLoad());
+        checkLoop(new GraphHopperFacade("test-avoid-loops2.xml")
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .importOrLoad());
     }
 
     @Test
     public void avoidsLoopEdgesIdenticalNodeIds_1533() {
         // BDCBB
-        checkLoop(new GraphHopperFacade("test-avoid-loops3.xml").importOrLoad());
+        checkLoop(new GraphHopperFacade("test-avoid-loops3.xml")
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .importOrLoad());
         // BBCDB
-        checkLoop(new GraphHopperFacade("test-avoid-loops4.xml").importOrLoad());
+        checkLoop(new GraphHopperFacade("test-avoid-loops4.xml")
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .importOrLoad());
     }
 
     @Test
     public void testBarriersOnTowerNodes() {
         GraphHopper hopper = new GraphHopperFacade(fileBarriers).
+                setDataReaderInitializer(osmDataReaderInitializer).
                 setMinNetworkSize(0).
                 importOrLoad();
         Graph graph = hopper.getBaseGraph();
@@ -544,6 +576,7 @@ public class OSMReaderTest {
     public void testTurnRestrictionsFromXML() {
         String fileTurnRestrictions = "test-restrictions.xml";
         GraphHopper hopper = new GraphHopperFacade(fileTurnRestrictions, "").
+                setDataReaderInitializer(osmDataReaderInitializer).
                 importOrLoad();
 
         Graph graph = hopper.getBaseGraph();
@@ -615,6 +648,7 @@ public class OSMReaderTest {
     public void testTurnRestrictionsViaHgvTransportationMode() {
         String fileTurnRestrictions = "test-restrictions.xml";
         GraphHopper hopper = new GraphHopperFacade(fileTurnRestrictions, "").
+                setDataReaderInitializer(osmDataReaderInitializer).
                 importOrLoad();
 
         Graph graph = hopper.getBaseGraph();
@@ -640,7 +674,9 @@ public class OSMReaderTest {
     public void testRoadAttributes() {
         String fileRoadAttributes = "test-road-attributes.xml";
         GraphHopper hopper = new GraphHopperFacade(fileRoadAttributes);
-        hopper.importOrLoad();
+        hopper.
+                setDataReaderInitializer(osmDataReaderInitializer).
+                importOrLoad();
 
         DecimalEncodedValue widthEnc = hopper.getEncodingManager().getDecimalEncodedValue(MaxWidth.KEY);
         DecimalEncodedValue heightEnc = hopper.getEncodingManager().getDecimalEncodedValue(MaxHeight.KEY);
@@ -686,6 +722,7 @@ public class OSMReaderTest {
         GraphHopper hopper = new GraphHopperFacade("test-osm5.xml");
         // get N10E046.hgt.zip
         ElevationProvider provider = new SRTMProvider(GraphHopperTest.DIR);
+        hopper.setDataReaderInitializer(osmDataReaderInitializer);
         hopper.setElevationProvider(provider);
         hopper.importOrLoad();
 
@@ -709,8 +746,9 @@ public class OSMReaderTest {
     @Test
     public void testTurnFlagCombination() {
         GraphHopper hopper = new GraphHopper();
+        hopper.setDataReaderInitializer(osmDataReaderInitializer);
         hopper.setEncodedValuesString("car_average_speed,car_access,bike_access,bike_average_speed,bike_priority");
-        hopper.setOSMFile(getClass().getResource("test-multi-profile-turn-restrictions.xml").getFile()).
+        hopper.setDataFile(getClass().getResource("test-multi-profile-turn-restrictions.xml").getFile()).
                 setGraphHopperLocation(dir).
                 setProfiles(
                         TestProfiles.accessAndSpeed("bike").setTurnCostsConfig(new TurnCostsConfig(List.of("bicycle"))),
@@ -752,6 +790,7 @@ public class OSMReaderTest {
     public void testConditionalTurnRestriction() {
         String fileConditionalTurnRestrictions = "test-conditional-turn-restrictions.xml";
         GraphHopper hopper = new GraphHopperFacade(fileConditionalTurnRestrictions, "").
+                setDataReaderInitializer(osmDataReaderInitializer).
                 setMinNetworkSize(0).
                 importOrLoad();
 
@@ -821,6 +860,7 @@ public class OSMReaderTest {
     public void testMultipleTurnRestrictions() {
         String fileMultipleConditionalTurnRestrictions = "test-multiple-conditional-turn-restrictions.xml";
         GraphHopper hopper = new GraphHopperFacade(fileMultipleConditionalTurnRestrictions, "").
+                setDataReaderInitializer(osmDataReaderInitializer).
                 importOrLoad();
 
         Graph graph = hopper.getBaseGraph();
@@ -863,6 +903,7 @@ public class OSMReaderTest {
     @Test
     public void testPreferredLanguage() {
         GraphHopper hopper = new GraphHopperFacade(file1, "de").
+                setDataReaderInitializer(osmDataReaderInitializer).
                 importOrLoad();
         BaseGraph graph = hopper.getBaseGraph();
         int n20 = AbstractGraphStorageTester.getIdOf(graph, 52);
@@ -871,6 +912,7 @@ public class OSMReaderTest {
         assertEquals("straße 123, B 122", iter.getName());
 
         hopper = new GraphHopperFacade(file1, "el").
+                setDataReaderInitializer(osmDataReaderInitializer).
                 importOrLoad();
         graph = hopper.getBaseGraph();
         n20 = AbstractGraphStorageTester.getIdOf(graph, 52);
@@ -883,6 +925,7 @@ public class OSMReaderTest {
     @Test
     public void testDataDateWithinPBF() {
         GraphHopper hopper = new GraphHopperFacade("test-osm6.pbf")
+                .setDataReaderInitializer(osmDataReaderInitializer)
                 .setMinNetworkSize(0)
                 .importOrLoad();
         StorableProperties properties = hopper.getProperties();
@@ -891,7 +934,9 @@ public class OSMReaderTest {
 
     @Test
     public void testCrossBoundary_issue667() {
-        GraphHopper hopper = new GraphHopperFacade("test-osm-waterway.xml").importOrLoad();
+        GraphHopper hopper = new GraphHopperFacade("test-osm-waterway.xml")
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .importOrLoad();
         Snap snap = hopper.getLocationIndex().findClosest(0.1, 179.5, EdgeFilter.ALL_EDGES);
         assertTrue(snap.isValid());
         assertEquals(0.1, snap.getSnappedPoint().lat, 0.1);
@@ -909,10 +954,11 @@ public class OSMReaderTest {
     public void testRoadClassInfoAndFerry() {
         GraphHopper gh = new GraphHopper() {
             @Override
-            protected File _getOSMFile() {
+            protected File _getDataFile() {
                 return new File(getClass().getResource(file2).getFile());
             }
-        }.setOSMFile("dummy").
+        }.setDataReaderInitializer(osmDataReaderInitializer).
+                setDataFile("dummy").
                 setEncodedValuesString("car_access,car_average_speed,road_environment,ferry_speed").
                 setProfiles(new Profile("car").setCustomModel(new CustomModel().
                         addToPriority(If("!car_access", MULTIPLY, "0")).
@@ -1060,7 +1106,7 @@ public class OSMReaderTest {
 
         public GraphHopperFacade(String osmFile, String prefLang) {
             setFileBacked(false);
-            setOSMFile(osmFile);
+            setDataFile(osmFile);
             setGraphHopperLocation(dir);
             setEncodedValuesString("max_width,max_height,max_weight,road_environment," +
                     "foot_access, foot_priority, foot_average_speed, " +
@@ -1077,10 +1123,10 @@ public class OSMReaderTest {
         }
 
         @Override
-        protected void importOSM() {
+        protected void importData() {
             BaseGraph baseGraph = new BaseGraph.Builder(getEncodingManager()).set3D(hasElevation()).withTurnCosts(getEncodingManager().needsTurnCostsSupport()).build();
             setBaseGraph(baseGraph);
-            super.importOSM();
+            super.importData();
             carAccessEnc = getEncodingManager().getBooleanEncodedValue(VehicleAccess.key("car"));
             carSpeedEnc = getEncodingManager().getDecimalEncodedValue(VehicleSpeed.key("car"));
             carOutExplorer = getBaseGraph().createEdgeExplorer(AccessFilter.outEdges(carAccessEnc));
@@ -1089,8 +1135,8 @@ public class OSMReaderTest {
         }
 
         @Override
-        protected File _getOSMFile() {
-            return new File(getClass().getResource(getOSMFile()).getFile());
+        protected File _getDataFile() {
+            return new File(getClass().getResource(getDataFile()).getFile());
         }
     }
 }

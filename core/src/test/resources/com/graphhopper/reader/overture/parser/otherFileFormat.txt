@@ -1,0 +1,474 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "id": "a737f685-b66f-41f1-9ef7-1909ecd15195",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [
+                        30.3650058,
+                        50.3597384
+                    ],
+                    [
+                        30.364802,
+                        50.3600132
+                    ],
+                    [
+                        30.3645399,
+                        50.3603907
+                    ],
+                    [
+                        30.3642985,
+                        50.3607825
+                    ],
+                    [
+                        30.3640764,
+                        50.361138
+                    ],
+                    [
+                        30.3639686,
+                        50.3612685
+                    ],
+                    [
+                        30.3638392,
+                        50.3613893
+                    ]
+                ],
+                "bbox": [
+                    30.3638392,
+                    50.3597384,
+                    30.3650058,
+                    50.3613893
+                ]
+            },
+            "properties": {
+                "theme": "transportation",
+                "type": "segment",
+                "version": 1,
+                "subtype": "road",
+                "class": "residential",
+                "subclass": null,
+                "sources": [
+                    {
+                        "property": "",
+                        "dataset": "OpenStreetMap",
+                        "license": "ODbL-1.0",
+                        "record_id": "w142277575@49",
+                        "update_time": "2023-10-31T20:28:22Z",
+                        "confidence": null,
+                        "between": null
+                    }
+                ],
+                "names": {
+                    "primary": "Сахравська вулиця",
+                    "common": {
+                        "uk": "Сахравська вулиця",
+                        "ru": "Сахравская улица"
+                    },
+                    "rules": [
+                        {
+                            "variant": "common",
+                            "language": null,
+                            "perspectives": null,
+                            "value": "Сахравська вулиця",
+                            "between": null,
+                            "side": null
+                        }
+                    ]
+                },
+                "connectors": [
+                    {
+                        "connector_id": "7a8a40e7-e1c4-41dc-af2d-d89e52f07943",
+                        "at": 0.0
+                    },
+                    {
+                        "connector_id": "2ea9c3e6-06a6-48a4-828f-e10d95092696",
+                        "at": 1.0
+                    }
+                ],
+                "routes": null,
+                "subclass_rules": null,
+                "access_restrictions": null,
+                "level_rules": null,
+                "destinations": null,
+                "prohibited_transitions": null,
+                "road_surface": null,
+                "road_flags": null,
+                "speed_limits": [
+                    {
+                        "min_speed": null,
+                        "max_speed": {
+                            "value": 40,
+                            "unit": "km/h"
+                        },
+                        "is_max_speed_variable": null,
+                        "when": null,
+                        "between": null
+                    }
+                ],
+                "width_rules": null,
+                "rail_flags": null
+            }
+        },
+        {
+            "type": "Feature",
+            "id": "d760cef7-3ed1-4685-a561-a9708b5206f2",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [
+                        30.3655706,
+                        50.3584394
+                    ],
+                    [
+                        30.3655162,
+                        50.3584947
+                    ],
+                    [
+                        30.3653607,
+                        50.3586881
+                    ],
+                    [
+                        30.3652132,
+                        50.3589653
+                    ],
+                    [
+                        30.365155,
+                        50.3591034
+                    ],
+                    [
+                        30.3651139,
+                        50.3592203
+                    ],
+                    [
+                        30.3650058,
+                        50.3597384
+                    ]
+                ],
+                "bbox": [
+                    30.3650058,
+                    50.3584394,
+                    30.3655706,
+                    50.3597384
+                ]
+            },
+            "properties": {
+                "theme": "transportation",
+                "type": "segment",
+                "version": 1,
+                "subtype": "road",
+                "class": "residential",
+                "subclass": null,
+                "sources": [
+                    {
+                        "property": "",
+                        "dataset": "OpenStreetMap",
+                        "license": "ODbL-1.0",
+                        "record_id": "w142277575@49",
+                        "update_time": "2023-10-31T20:28:22Z",
+                        "confidence": null,
+                        "between": null
+                    }
+                ],
+                "names": {
+                    "primary": "Сахравська вулиця",
+                    "common": {
+                        "uk": "Сахравська вулиця",
+                        "ru": "Сахравская улица"
+                    },
+                    "rules": [
+                        {
+                            "variant": "common",
+                            "language": null,
+                            "perspectives": null,
+                            "value": "Сахравська вулиця",
+                            "between": null,
+                            "side": null
+                        }
+                    ]
+                },
+                "connectors": [
+                    {
+                        "connector_id": "178fdf98-7c5e-4072-bd56-4f8edb7c9acf",
+                        "at": 0.0
+                    },
+                    {
+                        "connector_id": "9cccc7bf-692a-47ff-b966-a4f7a45225d3",
+                        "at": 0.527975352
+                    },
+                    {
+                        "connector_id": "7a8a40e7-e1c4-41dc-af2d-d89e52f07943",
+                        "at": 1.0
+                    }
+                ],
+                "routes": null,
+                "subclass_rules": null,
+                "access_restrictions": null,
+                "level_rules": null,
+                "destinations": null,
+                "prohibited_transitions": null,
+                "road_surface": null,
+                "road_flags": null,
+                "speed_limits": [
+                    {
+                        "min_speed": null,
+                        "max_speed": {
+                            "value": 40,
+                            "unit": "km/h"
+                        },
+                        "is_max_speed_variable": null,
+                        "when": null,
+                        "between": null
+                    }
+                ],
+                "width_rules": null,
+                "rail_flags": null
+            }
+        },
+        {
+            "type": "Feature",
+            "id": "508a7f88-2573-43f1-bde9-60791462a252",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [
+                        30.365696,
+                        50.356176
+                    ],
+                    [
+                        30.3660584,
+                        50.3565428
+                    ],
+                    [
+                        30.3667129,
+                        50.3574197
+                    ],
+                    [
+                        30.3667608,
+                        50.357521
+                    ],
+                    [
+                        30.3667769,
+                        50.35761
+                    ],
+                    [
+                        30.3667474,
+                        50.3576956
+                    ],
+                    [
+                        30.3666615,
+                        50.3577811
+                    ],
+                    [
+                        30.3658217,
+                        50.3583529
+                    ],
+                    [
+                        30.365653,
+                        50.3584091
+                    ],
+                    [
+                        30.3655706,
+                        50.3584394
+                    ]
+                ],
+                "bbox": [
+                    30.3655706,
+                    50.356176,
+                    30.3667769,
+                    50.3584394
+                ]
+            },
+            "properties": {
+                "theme": "transportation",
+                "type": "segment",
+                "version": 1,
+                "subtype": "road",
+                "class": "residential",
+                "subclass": null,
+                "sources": [
+                    {
+                        "property": "",
+                        "dataset": "OpenStreetMap",
+                        "license": "ODbL-1.0",
+                        "record_id": "w142277575@49",
+                        "update_time": "2023-10-31T20:28:22Z",
+                        "confidence": null,
+                        "between": null
+                    }
+                ],
+                "names": {
+                    "primary": "Сахравська вулиця",
+                    "common": {
+                        "uk": "Сахравська вулиця",
+                        "ru": "Сахравская улица"
+                    },
+                    "rules": [
+                        {
+                            "variant": "common",
+                            "language": null,
+                            "perspectives": null,
+                            "value": "Сахравська вулиця",
+                            "between": null,
+                            "side": null
+                        }
+                    ]
+                },
+                "connectors": [
+                    {
+                        "connector_id": "6ee32389-184b-4543-a5da-0f19f6bc0df0",
+                        "at": 0.0
+                    },
+                    {
+                        "connector_id": "178fdf98-7c5e-4072-bd56-4f8edb7c9acf",
+                        "at": 1.0
+                    }
+                ],
+                "routes": null,
+                "subclass_rules": null,
+                "access_restrictions": null,
+                "level_rules": null,
+                "destinations": null,
+                "prohibited_transitions": null,
+                "road_surface": null,
+                "road_flags": null,
+                "speed_limits": [
+                    {
+                        "min_speed": null,
+                        "max_speed": {
+                            "value": 40,
+                            "unit": "km/h"
+                        },
+                        "is_max_speed_variable": null,
+                        "when": null,
+                        "between": null
+                    }
+                ],
+                "width_rules": null,
+                "rail_flags": null
+            }
+        },
+        {
+            "type": "Feature",
+            "id": "a0da06f4-4c78-4260-8ef8-756647a1044d",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [
+                        30.3655706,
+                        50.3584394
+                    ],
+                    [
+                        30.3655028,
+                        50.3583561
+                    ],
+                    [
+                        30.365417,
+                        50.3582911
+                    ],
+                    [
+                        30.3650737,
+                        50.3580618
+                    ],
+                    [
+                        30.3644192,
+                        50.3577264
+                    ],
+                    [
+                        30.3640062,
+                        50.3575638
+                    ],
+                    [
+                        30.3633732,
+                        50.3572216
+                    ],
+                    [
+                        30.3626811,
+                        50.3567937
+                    ],
+                    [
+                        30.3623593,
+                        50.356561
+                    ]
+                ],
+                "bbox": [
+                    30.3623593,
+                    50.356561,
+                    30.3655706,
+                    50.3584394
+                ]
+            },
+            "properties": {
+                "theme": "transportation",
+                "type": "segment",
+                "version": 1,
+                "subtype": "road",
+                "class": "residential",
+                "subclass": null,
+                "sources": [
+                    {
+                        "property": "",
+                        "dataset": "OpenStreetMap",
+                        "license": "ODbL-1.0",
+                        "record_id": "w142277610@45",
+                        "update_time": "2023-10-31T20:28:41Z",
+                        "confidence": null,
+                        "between": null
+                    }
+                ],
+                "names": {
+                    "primary": "вулиця Леоніда Каденюка",
+                    "common": {
+                        "ru": "улица Леонида Каденюка",
+                        "pl": "ulica Leonida Kadeniuka",
+                        "uk": "вулиця Леоніда Каденюка"
+                    },
+                    "rules": [
+                        {
+                            "variant": "common",
+                            "language": null,
+                            "perspectives": null,
+                            "value": "вулиця Леоніда Каденюка",
+                            "between": null,
+                            "side": null
+                        }
+                    ]
+                },
+                "connectors": [
+                    {
+                        "connector_id": "178fdf98-7c5e-4072-bd56-4f8edb7c9acf",
+                        "at": 0.0
+                    },
+                    {
+                        "connector_id": "cf7234d8-c997-49ce-bce7-f6c096dcb503",
+                        "at": 1.0
+                    }
+                ],
+                "routes": null,
+                "subclass_rules": null,
+                "access_restrictions": null,
+                "level_rules": null,
+                "destinations": null,
+                "prohibited_transitions": null,
+                "road_surface": null,
+                "road_flags": null,
+                "speed_limits": [
+                    {
+                        "min_speed": null,
+                        "max_speed": {
+                            "value": 40,
+                            "unit": "km/h"
+                        },
+                        "is_max_speed_variable": null,
+                        "when": null,
+                        "between": null
+                    }
+                ],
+                "width_rules": null,
+                "rail_flags": null
+            }
+        }
+    ]
+}

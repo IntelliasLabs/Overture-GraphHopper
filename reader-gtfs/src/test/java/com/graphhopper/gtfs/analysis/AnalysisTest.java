@@ -24,6 +24,8 @@ import com.graphhopper.gtfs.GtfsStorage;
 import com.graphhopper.gtfs.PtGraph;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,6 +39,7 @@ public class AnalysisTest {
 
     private static final String GRAPH_LOC = "target/AnalysisTest";
     private static GraphHopperGtfs graphHopperGtfs;
+    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
 
     @BeforeAll
     public static void init() {
@@ -51,6 +54,7 @@ public class AnalysisTest {
                 TestProfiles.accessAndSpeed("car")));
         Helper.removeDir(new File(GRAPH_LOC));
         graphHopperGtfs = new GraphHopperGtfs(ghConfig);
+        graphHopperGtfs.setDataReaderInitializer(osmDataReaderInitializer);
         graphHopperGtfs.init(ghConfig);
         graphHopperGtfs.importOrLoad();
     }

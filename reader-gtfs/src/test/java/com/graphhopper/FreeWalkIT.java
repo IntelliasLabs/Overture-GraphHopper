@@ -22,6 +22,8 @@ import com.graphhopper.gtfs.*;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.TranslationMap;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -48,6 +50,7 @@ public class FreeWalkIT {
     private static PtRouter ptRouter;
     private static final ZoneId zoneId = ZoneId.of("America/Los_Angeles");
     private static GraphHopperGtfs graphHopperGtfs;
+    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
 
     @BeforeAll
     public static void init() {
@@ -68,6 +71,7 @@ public class FreeWalkIT {
 
         Helper.removeDir(new File(GRAPH_LOC));
         graphHopperGtfs = new GraphHopperGtfs(ghConfig);
+        graphHopperGtfs.setDataReaderInitializer(osmDataReaderInitializer);
         graphHopperGtfs.init(ghConfig);
         graphHopperGtfs.importOrLoad();
         ptRouter = new PtRouterFreeWalkImpl.Factory(ghConfig, new TranslationMap().doImport(), graphHopperGtfs.getBaseGraph(), graphHopperGtfs.getEncodingManager(), graphHopperGtfs.getLocationIndex(), graphHopperGtfs.getGtfsStorage())

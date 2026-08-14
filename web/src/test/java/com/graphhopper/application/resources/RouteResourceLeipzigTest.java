@@ -26,6 +26,8 @@ import com.graphhopper.config.CHProfile;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.BodyAndStatus;
 import com.graphhopper.util.Helper;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import org.junit.jupiter.api.AfterAll;
@@ -49,11 +51,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class RouteResourceLeipzigTest {
     private static final String DIR = "./target/route-resource-leipzig-gh/";
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
     private static final DropwizardAppExtension<GraphHopperServerConfiguration> app = new DropwizardAppExtension<>(GraphHopperApplication.class, createConfig());
 
     private static GraphHopperServerConfiguration createConfig() {
         GraphHopperServerConfiguration config = new GraphHopperServerTestConfiguration();
         config.getGraphHopperConfiguration().
+                setDataReaderInitializer(osmDataReaderInitializer).
                 putObject("prepare.min_network_size", 200).
                 putObject("datareader.file", "../map-matching/files/leipzig_germany.osm.pbf").
                 putObject("import.osm.ignored_highways", "").

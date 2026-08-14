@@ -13,6 +13,8 @@ import com.graphhopper.util.Parameters;
 import com.graphhopper.util.PointList;
 import com.graphhopper.util.TranslationMap;
 import com.graphhopper.util.shapes.GHPoint;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -30,6 +32,7 @@ public class NavigateResponseConverterTest {
     private static final String graphFolder = "target/graphhopper-test-car";
     private static final String osmFile = "../core/files/andorra.osm.gz";
     private static GraphHopper hopper;
+    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
     private static final String profile = "my_car";
     private final TranslationMap trMap = hopper.getTranslationMap();
     private final DistanceConfig distanceConfig = new DistanceConfig(DistanceUtils.Unit.METRIC, trMap, Locale.ENGLISH,
@@ -40,7 +43,9 @@ public class NavigateResponseConverterTest {
         // make sure we are using fresh files with correct vehicle
         Helper.removeDir(new File(graphFolder));
 
-        hopper = new GraphHopper().setOSMFile(osmFile).setFileBacked(true).setGraphHopperLocation(graphFolder)
+        hopper = new GraphHopper().setDataFile(osmFile).setFileBacked(true)
+                .setDataReaderInitializer(osmDataReaderInitializer)
+                .setGraphHopperLocation(graphFolder)
                 .setEncodedValuesString("car_access, car_average_speed, max_speed")
                 .setProfiles(TestProfiles.accessAndSpeed(profile, "car")).importOrLoad();
     }

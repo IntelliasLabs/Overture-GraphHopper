@@ -1,0 +1,56 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "way_60_kmh",
+      "properties": {
+        "class": "primary",
+        "speed_limits": [ { "max_speed": { "value": 60, "unit": "km/h" } } ]
+      },
+      "geometry": { "type": "LineString", "coordinates": [[30.520, 50.450], [30.530, 50.450]] }
+    },
+    {
+      "type": "Feature",
+      "id": "way_30_mph",
+      "properties": {
+        "class": "secondary",
+        "speed_limits": [ { "max_speed": { "value": 30, "unit": "mph" } } ]
+      },
+      "geometry": { "type": "LineString", "coordinates": [[30.530, 50.460], [30.540, 50.460]] }
+    },
+    {
+      "type": "Feature",
+      "id": "way_split",
+      "properties": {
+        "class": "motorway",
+        "speed_limits": [
+          { "max_speed": { "value": 100, "unit": "km/h" }, "between": [0, 0.5] },
+          { "max_speed": { "value": 40, "unit": "km/h" }, "between": [0.5, 1.0] }
+        ]
+      },
+      "geometry": { "type": "LineString", "coordinates": [[30.500, 50.400], [30.520, 50.400]] }
+    },
+    {
+      "type": "Feature",
+      "id": "way_conditional",
+      "properties": {
+        "class": "residential",
+        "speed_limits": [
+          { "max_speed": { "value": 50, "unit": "km/h" } },
+          { "max_speed": { "value": 20, "unit": "km/h" }, "when": { "during": "Mo-Fr 08:00-16:00" } }
+        ]
+      },
+      "geometry": { "type": "LineString", "coordinates": [[30.550, 50.470], [30.560, 50.470]] }
+    },
+    {
+      "type": "Feature",
+      "id": "way_garbage",
+      "properties": {
+        "class": "service",
+        "speed_limits": [{ "max_speed": { "value": 999, "unit": "light_years" } }]
+      },
+      "geometry": { "type": "LineString", "coordinates": [[30.570, 50.480], [30.580, 50.480]] }
+    }
+  ]
+}

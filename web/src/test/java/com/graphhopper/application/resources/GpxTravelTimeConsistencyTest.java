@@ -25,6 +25,8 @@ import com.graphhopper.gpx.GpxConversions;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.shapes.GHPoint;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -40,12 +42,14 @@ public class GpxTravelTimeConsistencyTest {
     private static final String graphFileFoot = "target/gpxtraveltimeconsistency-it";
     private static final String osmFile = DIR + "/monaco.osm.gz";
     private static GraphHopper hopper;
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
 
     @BeforeAll
     public static void beforeClass() {
         Helper.removeDir(new File(graphFileFoot));
         hopper = new GraphHopper().
-                setOSMFile(osmFile).
+                setDataReaderInitializer(osmDataReaderInitializer).
+                setDataFile(osmFile).
                 setProfiles(TestProfiles.constantSpeed("profile")).
                 setFileBacked(true).
                 setGraphHopperLocation(graphFileFoot).

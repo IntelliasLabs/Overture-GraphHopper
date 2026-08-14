@@ -30,6 +30,8 @@ import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.storage.index.Snap;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.PMap;
+import com.graphhopper.reader.DataReaderInitializer;
+import com.graphhopper.reader.osm.OSMReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MapMatching2Test {
     private static final String GH_LOCATION = "../target/mapmatchingtest2-gh";
     private final XmlMapper xmlMapper = new XmlMapper();
+    private static DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
 
     @BeforeEach
     @AfterEach
@@ -57,7 +60,8 @@ public class MapMatching2Test {
     @Test
     public void testIssue13() throws IOException {
         GraphHopper hopper = new GraphHopper();
-        hopper.setOSMFile("../map-matching/files/map-issue13.osm.gz");
+        hopper.setDataReaderInitializer(osmDataReaderInitializer);
+        hopper.setDataFile("../map-matching/files/map-issue13.osm.gz");
         hopper.setGraphHopperLocation(GH_LOCATION);
         hopper.setEncodedValuesString("car_access, car_average_speed");
         hopper.setProfiles(TestProfiles.accessAndSpeed("my_profile", "car"));
@@ -83,11 +87,12 @@ public class MapMatching2Test {
     @Test
     public void testIssue70() throws IOException {
         GraphHopper hopper = new GraphHopper();
-        hopper.setOSMFile("../map-matching/files/issue-70.osm.gz");
+        hopper.setDataFile("../map-matching/files/issue-70.osm.gz");
         hopper.setGraphHopperLocation(GH_LOCATION);
         hopper.setEncodedValuesString("car_access, car_average_speed");
         hopper.setProfiles(TestProfiles.accessAndSpeed("my_profile", "car"));
         hopper.getLMPreparationHandler().setLMProfiles(new LMProfile("my_profile"));
+        hopper.setDataReaderInitializer(osmDataReaderInitializer);
         hopper.importOrLoad();
 
         MapMatching mapMatching = MapMatching.fromGraphHopper(hopper, new PMap().putObject("profile", "my_profile"));
@@ -104,7 +109,8 @@ public class MapMatching2Test {
     @Test
     public void testIssue127() throws IOException {
         GraphHopper hopper = new GraphHopper();
-        hopper.setOSMFile("../map-matching/files/map-issue13.osm.gz");
+        hopper.setDataReaderInitializer(osmDataReaderInitializer);
+        hopper.setDataFile("../map-matching/files/map-issue13.osm.gz");
         hopper.setGraphHopperLocation(GH_LOCATION);
         hopper.setEncodedValuesString("car_access, car_average_speed");
         hopper.setProfiles(TestProfiles.accessAndSpeed("my_profile", "car"));

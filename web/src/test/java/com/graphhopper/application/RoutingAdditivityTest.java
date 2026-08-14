@@ -25,6 +25,8 @@ import com.graphhopper.config.LMProfile;
 import com.graphhopper.routing.TestProfiles;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.shapes.GHPoint;
+import com.graphhopper.reader.osm.OSMReader;
+import com.graphhopper.reader.DataReaderInitializer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -41,12 +43,14 @@ public class RoutingAdditivityTest {
 
     private static final String GH_LOCATION = "../target/routing-additivity-test-gh";
     private static GraphHopper graphHopper;
+    private static final DataReaderInitializer osmDataReaderInitializer = OSMReader::new;
 
     @BeforeAll
     public static void setup() {
         Helper.removeDir(new File(GH_LOCATION));
         graphHopper = new GraphHopper();
-        graphHopper.setOSMFile("../map-matching/files/leipzig_germany.osm.pbf");
+        graphHopper.setDataReaderInitializer(osmDataReaderInitializer);
+        graphHopper.setDataFile("../map-matching/files/leipzig_germany.osm.pbf");
         graphHopper.setGraphHopperLocation(GH_LOCATION);
         graphHopper.setEncodedValuesString("car_access, car_average_speed");
         graphHopper.setProfiles(TestProfiles.accessAndSpeed("my_profile", "car"));

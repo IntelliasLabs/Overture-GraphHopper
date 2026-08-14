@@ -1,0 +1,129 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "aa24b2ac-d72b-4293-937b-5907a9a76638",
+                "bbox": {
+                    "xmin": 24.015276,
+                    "xmax": 24.016802,
+                    "ymin": 49.83672,
+                    "ymax": 49.8377
+                },
+                "version": 1,
+                "sources": [
+                    {
+                        "property": "",
+                        "dataset": "OpenStreetMap",
+                        "license": "ODbL-1.0",
+                        "record_id": "w565542406@3",
+                        "update_time": "2018-03-12T11:46:28Z"
+                    }
+                ],
+                "subtype": "road",
+                "class": "footway",
+                "connectors": [
+                    {
+                        "connector_id": "74d163e3-a1f1-4698-83f4-b1a1cbbea4c4",
+                        "at": 0.0
+                    },
+                    {
+                        "connector_id": "abc2afb0-6f65-4f27-87c2-aca02808a0d1",
+                        "at": 1.0
+                    }
+                ]
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [
+                        24.015276,
+                        49.8376928
+                    ],
+                    [
+                        24.0159523,
+                        49.8371417
+                    ],
+                    [
+                        24.0168012,
+                        49.8367201
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "7271bf29-c472-4728-ad05-53f8777dbcf7",
+                "bbox": {
+                    "xmin": 24.016897,
+                    "xmax": 24.017115,
+                    "ymin": 49.834064,
+                    "ymax": 49.834274
+                },
+                "version": 1,
+                "sources": [
+                    {
+                        "property": "",
+                        "dataset": "OpenStreetMap",
+                        "license": "ODbL-1.0",
+                        "record_id": "w862098064@1",
+                        "update_time": "2020-10-21T14:35:18Z"
+                    }
+                ],
+                "subtype": "road",
+                "class": "servic",
+                "connectors": [
+                    {
+                        "connector_id": "a83e7fbd-44a7-44c6-bb65-b534c46848d6",
+                        "at": 0.0
+                    },
+                    {
+                        "connector_id": "bfaedffa-4fd5-4604-a647-5d3b3a0c0641",
+                        "at": 0.155306126
+                    },
+                    {
+                        "connector_id": "68520f41-b759-4daa-9ae4-9e43af8e6be1",
+                        "at": 0.499510852
+                    },
+                    {
+                        "connector_id": "5079e0ad-e831-4258-b1c3-709268df83e4",
+                        "at": 1.0
+                    }
+                ],
+                "subclass_rules": [
+                    {
+                        "value": "parking_aisle"
+                    }
+                ],
+                "subclass": "parking_aisle"
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [
+                        24.0171138,
+                        49.834267
+                    ],
+                    [
+                        24.0170836,
+                        49.8342352
+                    ],
+                    [
+                        24.0170625,
+                        49.834213
+                    ],
+                    [
+                        24.0170099,
+                        49.8341677
+                    ],
+                    [
+                        24.0168981,
+                        49.8340716
+                    ]
+                ]
+            }
+        }
+    ]
+}
